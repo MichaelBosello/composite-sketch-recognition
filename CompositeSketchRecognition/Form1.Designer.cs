@@ -207,6 +207,7 @@
             this.buttonNext.TabIndex = 16;
             this.buttonNext.Text = "Next Page";
             this.buttonNext.UseVisualStyleBackColor = true;
+            this.buttonNext.Click += new System.EventHandler(this.buttonNext_Click);
             // 
             // buttonPrevious
             // 
@@ -217,6 +218,7 @@
             this.buttonPrevious.TabIndex = 17;
             this.buttonPrevious.Text = "Previous Page";
             this.buttonPrevious.UseVisualStyleBackColor = true;
+            this.buttonPrevious.Click += new System.EventHandler(this.buttonPrevious_Click);
             // 
             // labelShowing
             // 
