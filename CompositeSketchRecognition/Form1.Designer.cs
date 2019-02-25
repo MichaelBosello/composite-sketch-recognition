@@ -29,67 +29,75 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.button1 = new System.Windows.Forms.Button();
-            this.label1 = new System.Windows.Forms.Label();
-            this.foundLabel = new System.Windows.Forms.Label();
-            this.imageBox4 = new Emgu.CV.UI.ImageBox();
+            this.buttonQuery = new System.Windows.Forms.Button();
+            this.labelFoundIn = new System.Windows.Forms.Label();
+            this.labelFound = new System.Windows.Forms.Label();
+            this.sketch = new Emgu.CV.UI.ImageBox();
             this.imageBox1 = new Emgu.CV.UI.ImageBox();
             this.imageBox2 = new Emgu.CV.UI.ImageBox();
             this.imageBox3 = new Emgu.CV.UI.ImageBox();
-            this.imageBox5 = new Emgu.CV.UI.ImageBox();
             this.imageBox6 = new Emgu.CV.UI.ImageBox();
-            this.imageBox7 = new Emgu.CV.UI.ImageBox();
-            this.imageBox8 = new Emgu.CV.UI.ImageBox();
+            this.imageBox5 = new Emgu.CV.UI.ImageBox();
+            this.imageBox4 = new Emgu.CV.UI.ImageBox();
             this.imageBox9 = new Emgu.CV.UI.ImageBox();
-            this.imageBox10 = new Emgu.CV.UI.ImageBox();
-            ((System.ComponentModel.ISupportInitialize)(this.imageBox4)).BeginInit();
+            this.imageBox8 = new Emgu.CV.UI.ImageBox();
+            this.imageBox7 = new Emgu.CV.UI.ImageBox();
+            this.buttonNext = new System.Windows.Forms.Button();
+            this.buttonPrevious = new System.Windows.Forms.Button();
+            this.labelShowing = new System.Windows.Forms.Label();
+            this.labelIndex = new System.Windows.Forms.Label();
+            this.labelSketchID = new System.Windows.Forms.Label();
+            this.backgroundWorker = new System.ComponentModel.BackgroundWorker();
+            ((System.ComponentModel.ISupportInitialize)(this.sketch)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox3)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.imageBox5)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox6)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.imageBox7)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.imageBox8)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.imageBox5)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.imageBox4)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox9)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.imageBox10)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.imageBox8)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.imageBox7)).BeginInit();
             this.SuspendLayout();
             // 
-            // button1
+            // buttonQuery
             // 
-            this.button1.Location = new System.Drawing.Point(13, 13);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
-            this.button1.TabIndex = 0;
-            this.button1.Text = "Query";
-            this.button1.UseVisualStyleBackColor = true;
+            this.buttonQuery.Location = new System.Drawing.Point(13, 13);
+            this.buttonQuery.Name = "buttonQuery";
+            this.buttonQuery.Size = new System.Drawing.Size(75, 23);
+            this.buttonQuery.TabIndex = 0;
+            this.buttonQuery.Text = "Query";
+            this.buttonQuery.UseVisualStyleBackColor = true;
+            this.buttonQuery.Click += new System.EventHandler(this.buttonQuery_Click);
             // 
-            // label1
+            // labelFoundIn
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(142, 18);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(51, 13);
-            this.label1.TabIndex = 1;
-            this.label1.Text = "Found in:";
+            this.labelFoundIn.AutoSize = true;
+            this.labelFoundIn.Enabled = false;
+            this.labelFoundIn.Location = new System.Drawing.Point(142, 18);
+            this.labelFoundIn.Name = "labelFoundIn";
+            this.labelFoundIn.Size = new System.Drawing.Size(51, 13);
+            this.labelFoundIn.TabIndex = 1;
+            this.labelFoundIn.Text = "Found in:";
             // 
-            // foundLabel
+            // labelFound
             // 
-            this.foundLabel.AutoSize = true;
-            this.foundLabel.Location = new System.Drawing.Point(200, 18);
-            this.foundLabel.Name = "foundLabel";
-            this.foundLabel.Size = new System.Drawing.Size(0, 13);
-            this.foundLabel.TabIndex = 2;
+            this.labelFound.AutoSize = true;
+            this.labelFound.Location = new System.Drawing.Point(200, 18);
+            this.labelFound.Name = "labelFound";
+            this.labelFound.Size = new System.Drawing.Size(0, 13);
+            this.labelFound.TabIndex = 2;
             // 
-            // imageBox4
+            // sketch
             // 
-            this.imageBox4.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.imageBox4.FunctionalMode = Emgu.CV.UI.ImageBox.FunctionalModeOption.PanAndZoom;
-            this.imageBox4.Location = new System.Drawing.Point(42, 335);
-            this.imageBox4.Name = "imageBox4";
-            this.imageBox4.Size = new System.Drawing.Size(269, 317);
-            this.imageBox4.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.imageBox4.TabIndex = 6;
-            this.imageBox4.TabStop = false;
+            this.sketch.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.sketch.FunctionalMode = Emgu.CV.UI.ImageBox.FunctionalModeOption.PanAndZoom;
+            this.sketch.Location = new System.Drawing.Point(42, 335);
+            this.sketch.Name = "sketch";
+            this.sketch.Size = new System.Drawing.Size(269, 317);
+            this.sketch.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.sketch.TabIndex = 6;
+            this.sketch.TabStop = false;
             // 
             // imageBox1
             // 
@@ -124,102 +132,157 @@
             this.imageBox3.TabIndex = 9;
             this.imageBox3.TabStop = false;
             // 
-            // imageBox5
-            // 
-            this.imageBox5.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.imageBox5.FunctionalMode = Emgu.CV.UI.ImageBox.FunctionalModeOption.PanAndZoom;
-            this.imageBox5.Location = new System.Drawing.Point(911, 335);
-            this.imageBox5.Name = "imageBox5";
-            this.imageBox5.Size = new System.Drawing.Size(269, 317);
-            this.imageBox5.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.imageBox5.TabIndex = 12;
-            this.imageBox5.TabStop = false;
-            // 
             // imageBox6
             // 
             this.imageBox6.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.imageBox6.FunctionalMode = Emgu.CV.UI.ImageBox.FunctionalModeOption.PanAndZoom;
-            this.imageBox6.Location = new System.Drawing.Point(636, 335);
+            this.imageBox6.Location = new System.Drawing.Point(911, 335);
             this.imageBox6.Name = "imageBox6";
             this.imageBox6.Size = new System.Drawing.Size(269, 317);
             this.imageBox6.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.imageBox6.TabIndex = 11;
+            this.imageBox6.TabIndex = 12;
             this.imageBox6.TabStop = false;
             // 
-            // imageBox7
+            // imageBox5
             // 
-            this.imageBox7.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.imageBox7.FunctionalMode = Emgu.CV.UI.ImageBox.FunctionalModeOption.PanAndZoom;
-            this.imageBox7.Location = new System.Drawing.Point(361, 335);
-            this.imageBox7.Name = "imageBox7";
-            this.imageBox7.Size = new System.Drawing.Size(269, 317);
-            this.imageBox7.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.imageBox7.TabIndex = 10;
-            this.imageBox7.TabStop = false;
+            this.imageBox5.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.imageBox5.FunctionalMode = Emgu.CV.UI.ImageBox.FunctionalModeOption.PanAndZoom;
+            this.imageBox5.Location = new System.Drawing.Point(636, 335);
+            this.imageBox5.Name = "imageBox5";
+            this.imageBox5.Size = new System.Drawing.Size(269, 317);
+            this.imageBox5.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.imageBox5.TabIndex = 11;
+            this.imageBox5.TabStop = false;
             // 
-            // imageBox8
+            // imageBox4
             // 
-            this.imageBox8.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.imageBox8.FunctionalMode = Emgu.CV.UI.ImageBox.FunctionalModeOption.PanAndZoom;
-            this.imageBox8.Location = new System.Drawing.Point(911, 658);
-            this.imageBox8.Name = "imageBox8";
-            this.imageBox8.Size = new System.Drawing.Size(269, 317);
-            this.imageBox8.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.imageBox8.TabIndex = 15;
-            this.imageBox8.TabStop = false;
+            this.imageBox4.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.imageBox4.FunctionalMode = Emgu.CV.UI.ImageBox.FunctionalModeOption.PanAndZoom;
+            this.imageBox4.Location = new System.Drawing.Point(361, 335);
+            this.imageBox4.Name = "imageBox4";
+            this.imageBox4.Size = new System.Drawing.Size(269, 317);
+            this.imageBox4.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.imageBox4.TabIndex = 10;
+            this.imageBox4.TabStop = false;
             // 
             // imageBox9
             // 
             this.imageBox9.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.imageBox9.FunctionalMode = Emgu.CV.UI.ImageBox.FunctionalModeOption.PanAndZoom;
-            this.imageBox9.Location = new System.Drawing.Point(636, 658);
+            this.imageBox9.Location = new System.Drawing.Point(911, 658);
             this.imageBox9.Name = "imageBox9";
             this.imageBox9.Size = new System.Drawing.Size(269, 317);
             this.imageBox9.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.imageBox9.TabIndex = 14;
+            this.imageBox9.TabIndex = 15;
             this.imageBox9.TabStop = false;
             // 
-            // imageBox10
+            // imageBox8
             // 
-            this.imageBox10.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.imageBox10.FunctionalMode = Emgu.CV.UI.ImageBox.FunctionalModeOption.PanAndZoom;
-            this.imageBox10.Location = new System.Drawing.Point(361, 658);
-            this.imageBox10.Name = "imageBox10";
-            this.imageBox10.Size = new System.Drawing.Size(269, 317);
-            this.imageBox10.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.imageBox10.TabIndex = 13;
-            this.imageBox10.TabStop = false;
+            this.imageBox8.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.imageBox8.FunctionalMode = Emgu.CV.UI.ImageBox.FunctionalModeOption.PanAndZoom;
+            this.imageBox8.Location = new System.Drawing.Point(636, 658);
+            this.imageBox8.Name = "imageBox8";
+            this.imageBox8.Size = new System.Drawing.Size(269, 317);
+            this.imageBox8.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.imageBox8.TabIndex = 14;
+            this.imageBox8.TabStop = false;
+            // 
+            // imageBox7
+            // 
+            this.imageBox7.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.imageBox7.FunctionalMode = Emgu.CV.UI.ImageBox.FunctionalModeOption.PanAndZoom;
+            this.imageBox7.Location = new System.Drawing.Point(361, 658);
+            this.imageBox7.Name = "imageBox7";
+            this.imageBox7.Size = new System.Drawing.Size(269, 317);
+            this.imageBox7.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.imageBox7.TabIndex = 13;
+            this.imageBox7.TabStop = false;
+            // 
+            // buttonNext
+            // 
+            this.buttonNext.Enabled = false;
+            this.buttonNext.Location = new System.Drawing.Point(198, 210);
+            this.buttonNext.Name = "buttonNext";
+            this.buttonNext.Size = new System.Drawing.Size(113, 23);
+            this.buttonNext.TabIndex = 16;
+            this.buttonNext.Text = "Next Page";
+            this.buttonNext.UseVisualStyleBackColor = true;
+            // 
+            // buttonPrevious
+            // 
+            this.buttonPrevious.Enabled = false;
+            this.buttonPrevious.Location = new System.Drawing.Point(42, 210);
+            this.buttonPrevious.Name = "buttonPrevious";
+            this.buttonPrevious.Size = new System.Drawing.Size(113, 23);
+            this.buttonPrevious.TabIndex = 17;
+            this.buttonPrevious.Text = "Previous Page";
+            this.buttonPrevious.UseVisualStyleBackColor = true;
+            // 
+            // labelShowing
+            // 
+            this.labelShowing.AutoSize = true;
+            this.labelShowing.Enabled = false;
+            this.labelShowing.Location = new System.Drawing.Point(39, 161);
+            this.labelShowing.Name = "labelShowing";
+            this.labelShowing.Size = new System.Drawing.Size(54, 13);
+            this.labelShowing.TabIndex = 18;
+            this.labelShowing.Text = "Showing: ";
+            // 
+            // labelIndex
+            // 
+            this.labelIndex.AutoSize = true;
+            this.labelIndex.Location = new System.Drawing.Point(100, 161);
+            this.labelIndex.Name = "labelIndex";
+            this.labelIndex.Size = new System.Drawing.Size(0, 13);
+            this.labelIndex.TabIndex = 19;
+            // 
+            // labelSketchID
+            // 
+            this.labelSketchID.Location = new System.Drawing.Point(42, 658);
+            this.labelSketchID.Name = "labelSketchID";
+            this.labelSketchID.Size = new System.Drawing.Size(269, 23);
+            this.labelSketchID.TabIndex = 20;
+            // 
+            // backgroundWorker
+            // 
+            this.backgroundWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker_DoWork);
+            this.backgroundWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker_RunWorkerCompleted);
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1203, 985);
-            this.Controls.Add(this.imageBox8);
+            this.Controls.Add(this.labelSketchID);
+            this.Controls.Add(this.labelIndex);
+            this.Controls.Add(this.labelShowing);
+            this.Controls.Add(this.buttonPrevious);
+            this.Controls.Add(this.buttonNext);
             this.Controls.Add(this.imageBox9);
-            this.Controls.Add(this.imageBox10);
-            this.Controls.Add(this.imageBox5);
-            this.Controls.Add(this.imageBox6);
+            this.Controls.Add(this.imageBox8);
             this.Controls.Add(this.imageBox7);
+            this.Controls.Add(this.imageBox6);
+            this.Controls.Add(this.imageBox5);
+            this.Controls.Add(this.imageBox4);
             this.Controls.Add(this.imageBox3);
             this.Controls.Add(this.imageBox2);
             this.Controls.Add(this.imageBox1);
-            this.Controls.Add(this.imageBox4);
-            this.Controls.Add(this.foundLabel);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.button1);
+            this.Controls.Add(this.sketch);
+            this.Controls.Add(this.labelFound);
+            this.Controls.Add(this.labelFoundIn);
+            this.Controls.Add(this.buttonQuery);
             this.Name = "Form1";
             this.Text = "Form1";
-            ((System.ComponentModel.ISupportInitialize)(this.imageBox4)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.sketch)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox2)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox3)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.imageBox5)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox6)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.imageBox7)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.imageBox8)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.imageBox5)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.imageBox4)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox9)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.imageBox10)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.imageBox8)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.imageBox7)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -227,19 +290,25 @@
 
         #endregion
 
-        private System.Windows.Forms.Button button1;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Label foundLabel;
-        private Emgu.CV.UI.ImageBox imageBox4;
+        private System.Windows.Forms.Button buttonQuery;
+        private System.Windows.Forms.Label labelFoundIn;
+        private System.Windows.Forms.Label labelFound;
+        private Emgu.CV.UI.ImageBox sketch;
         private Emgu.CV.UI.ImageBox imageBox1;
         private Emgu.CV.UI.ImageBox imageBox2;
         private Emgu.CV.UI.ImageBox imageBox3;
-        private Emgu.CV.UI.ImageBox imageBox5;
         private Emgu.CV.UI.ImageBox imageBox6;
-        private Emgu.CV.UI.ImageBox imageBox7;
-        private Emgu.CV.UI.ImageBox imageBox8;
+        private Emgu.CV.UI.ImageBox imageBox5;
+        private Emgu.CV.UI.ImageBox imageBox4;
         private Emgu.CV.UI.ImageBox imageBox9;
-        private Emgu.CV.UI.ImageBox imageBox10;
+        private Emgu.CV.UI.ImageBox imageBox8;
+        private Emgu.CV.UI.ImageBox imageBox7;
+        private System.Windows.Forms.Button buttonNext;
+        private System.Windows.Forms.Button buttonPrevious;
+        private System.Windows.Forms.Label labelShowing;
+        private System.Windows.Forms.Label labelIndex;
+        private System.Windows.Forms.Label labelSketchID;
+        private System.ComponentModel.BackgroundWorker backgroundWorker;
     }
 }
 
