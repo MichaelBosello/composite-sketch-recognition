@@ -41,6 +41,7 @@ namespace CompositeSketchRecognition
         {
 
             Image<Bgr, byte> image = new Image<Bgr, byte>(imagePath);
+            Image<Bgr, byte> imageCorrectLandmark = image.Copy();
             var grayImage = image.Convert<Gray, Byte>();
 
             var faces = haarFrontalFace.DetectMultiScale(grayImage,
@@ -59,40 +60,69 @@ namespace CompositeSketchRecognition
             var realFace = faces.First();
             foreach (var face in faces)
             {
-                image.Draw(face, new Bgr(Color.BlueViolet), 3);
+                image.Draw(face, new Bgr(Color.LightBlue), 3);
                 if (face.Y < realFace.Y)
                 {
                     realFace = face;
                 }
             }
+            image.Draw(realFace, new Bgr(Color.DarkBlue), 3);
+            imageCorrectLandmark.Draw(realFace, new Bgr(Color.DarkBlue), 3);
 
             var cutFace = image.GetSubRect(realFace);
+            var cutFaceCorrectLandmark = imageCorrectLandmark.GetSubRect(realFace);
             var grayCutFace = grayImage.GetSubRect(realFace);
 
-            image.Draw(realFace, new Bgr(Color.BurlyWood), 3);
+            
 
             var eyes = haarEye.DetectMultiScale(cutFace,
                 1.01, 15);
-            var mouths = haarMouth.DetectMultiScale(grayCutFace,
-                1.01, 15, new Size(grayCutFace.Width / 8, grayCutFace.Height / 8));
-
             foreach (var eye in eyes)
             {
-                cutFace.Draw(eye, new Bgr(Color.DarkOrange), 3);
+                cutFace.Draw(eye, new Bgr(Color.Magenta), 3);
+            }
+            var realEyes = eyes.ToList();
+            foreach (var eye in eyes)
+            {
+                if (eye.Y > cutFace.Height * 0.4)
+                {
+                    realEyes.Remove(eye);
+                }
+            }
+            while (realEyes.Count > 2)
+            {
+                var top = realEyes.First();
+                foreach (var eye in realEyes)
+                {
+                    if (eye.Y + eye.Height < top.Y + top.Height)
+                    {
+                        top = eye;
+                    }
+                }
+                realEyes.Remove(top);
             }
 
+            foreach (var eye in realEyes)
+            {
+                cutFace.Draw(eye, new Bgr(Color.DarkMagenta), 3);
+                cutFaceCorrectLandmark.Draw(eye, new Bgr(Color.DarkMagenta), 3);
+            }
+
+            var mouths = haarMouth.DetectMultiScale(grayCutFace,
+                1.01, 15, new Size(grayCutFace.Width / 8, grayCutFace.Height / 8));
             if (mouths.Length > 0)
             {
                 var realMouth = mouths.First();
                 foreach (var mouth in mouths)
                 {
-                    cutFace.Draw(realMouth, new Bgr(Color.MediumVioletRed), 3);
-                    if (mouth.Y > realMouth.Y)
+                    cutFace.Draw(realMouth, new Bgr(Color.LightGreen), 3);
+                    if (mouth.Y + mouth.Height > realMouth.Y + realMouth.Height)
                     {
                         realMouth = mouth;
                     }
                 }
-                cutFace.Draw(realMouth, new Bgr(Color.DeepSkyBlue), 3);
+                cutFace.Draw(realMouth, new Bgr(Color.DarkGreen), 3);
+                cutFaceCorrectLandmark.Draw(realMouth, new Bgr(Color.DarkGreen), 3);
             }
 
 
@@ -107,7 +137,7 @@ namespace CompositeSketchRecognition
             }
             else if (index == 2)
             {
-                return cutFace;
+                return imageCorrectLandmark;
             }
             return null;
         }
