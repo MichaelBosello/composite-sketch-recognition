@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,14 +15,33 @@ namespace CompositeSketchRecognition
 {
     public partial class Form1 : Form
     {
+        public const string PHOTO_PATH = @"..\..\..\database\UoM-SGFS-v2\Photos\Images\";
+        public const string SKETCH_PATH = @"..\..\..\database\UoM-SGFS-v2\Sketches\Set A\Images\";
+        public const string PHOTO_EXTENSION = "*.ppm";
+        public const string SKETCH_EXTENSION = "*.bmp";
         public const int RANK = 100;
 
         ImageRetreivalSystem imageRetreivalSystem = new ImageRetreivalSystem();
         int currentIndex = 0;
+        int currentStep = 0;
+        String currentStepImage = "";
 
         public Form1()
         {
             InitializeComponent();
+            PopulateListBox(listBox1, PHOTO_PATH, PHOTO_EXTENSION);
+            PopulateListBox(listBox2, SKETCH_PATH, SKETCH_EXTENSION);
+        }
+
+        private void PopulateListBox(ListBox lsb, string Folder, string FileType)
+        {
+            DirectoryInfo dinfo = new DirectoryInfo(Folder);
+            FileInfo[] Files = dinfo.GetFiles(FileType);
+            foreach (FileInfo file in Files)
+            {
+                lsb.Items.Add(file.Name);
+            }
+            lsb.Sorted = true;
         }
 
         private void buttonQuery_Click(object sender, EventArgs e)
@@ -130,6 +150,40 @@ namespace CompositeSketchRecognition
             imageBox7.Image = imageRetreivalSystem.getImage(currentIndex + 6);
             imageBox8.Image = imageRetreivalSystem.getImage(currentIndex + 7);
             imageBox9.Image = imageRetreivalSystem.getImage(currentIndex + 8);
+        }
+
+        
+
+        private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            currentStepImage = PHOTO_PATH + listBox1.SelectedItem;
+            imageBoxStep.Image = imageRetreivalSystem.getStepImage(currentStepImage, currentStep);
+        }
+
+        private void listBox2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            currentStepImage = SKETCH_PATH + listBox2.SelectedItem;
+            imageBoxStep.Image = imageRetreivalSystem.getStepImage(currentStepImage, currentStep);
+        }
+
+        private void buttonStepPre_Click(object sender, EventArgs e)
+        {
+            if (currentStep > 0)
+            {
+                currentStep--;
+                labelStep.Text = currentStep.ToString();
+                imageBoxStep.Image = imageRetreivalSystem.getStepImage(currentStepImage, currentStep);
+            }
+        }
+
+        private void buttonStepNext_Click(object sender, EventArgs e)
+        {
+            if (currentStep < 9)
+            {
+                currentStep++;
+                labelStep.Text = currentStep.ToString();
+                imageBoxStep.Image = imageRetreivalSystem.getStepImage(currentStepImage, currentStep);
+            }
         }
     }
 }
