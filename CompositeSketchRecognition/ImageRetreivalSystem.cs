@@ -39,13 +39,13 @@ namespace CompositeSketchRecognition
 
         public Image<Bgr, byte> getStepImage(String imagePath, int index)
         {
-
             Image<Bgr, byte> image = new Image<Bgr, byte>(imagePath);
-            Image<Bgr, byte> imageCorrectLandmark = image.Copy();
-            var grayImage = image.Convert<Gray, Byte>();
-
+            Image<Bgr, byte> drawImage = image.Copy();
+            Image<Bgr, byte> imageCorrectLandmark = drawImage.Copy();
+            var grayImage = drawImage.Convert<Gray, Byte>();
+            
             var faces = haarFrontalFace.DetectMultiScale(grayImage,
-                1.05, 15, new Size(image.Width/8, image.Height/8));
+                1.05, 15, new Size(drawImage.Width/8, drawImage.Height/8));
             if (faces.Length == 0)
             {
                 CvInvoke.EqualizeHist(grayImage, grayImage);
@@ -53,23 +53,23 @@ namespace CompositeSketchRecognition
                 1.01, 15);
                 if (faces.Length == 0)
                 {
-                    return image;
+                    return drawImage;
                 }
             }
 
             var realFace = faces.First();
             foreach (var face in faces)
             {
-                image.Draw(face, new Bgr(Color.LightBlue), 3);
+                drawImage.Draw(face, new Bgr(Color.LightBlue), 3);
                 if (face.Y < realFace.Y)
                 {
                     realFace = face;
                 }
             }
-            image.Draw(realFace, new Bgr(Color.DarkBlue), 3);
+            drawImage.Draw(realFace, new Bgr(Color.DarkBlue), 3);
             imageCorrectLandmark.Draw(realFace, new Bgr(Color.DarkBlue), 3);
 
-            var cutFace = image.GetSubRect(realFace);
+            var cutFace = drawImage.GetSubRect(realFace);
             var cutFaceCorrectLandmark = imageCorrectLandmark.GetSubRect(realFace);
             var grayCutFace = grayImage.GetSubRect(realFace);
 
@@ -125,6 +125,29 @@ namespace CompositeSketchRecognition
                 cutFaceCorrectLandmark.Draw(realMouth, new Bgr(Color.DarkGreen), 3);
             }
 
+    
+
+            var imageGray = image.Convert<Gray, byte>();
+            var gx = imageGray.Sobel(1, 0, 3);
+            var gy = imageGray.Sobel(0, 1, 3);
+
+            var gradientMagnitude =
+                new Image<Gray, float>(imageGray.Width, imageGray.Height);
+
+            for (int y = 0; y < imageGray.Height; y++)
+            {
+                for (int x = 0; x < imageGray.Width; x++)
+                {
+                    var gradient = Math.Sqrt(gx[y, x].Intensity * gx[y, x].Intensity + gy[y, x].Intensity * gy[y, x].Intensity);
+                    gradientMagnitude[y, x] = new Gray(gradient);
+                }
+            }
+
+            gradientMagnitude = gradientMagnitude
+                    .ThresholdBinary(new Gray(60), new Gray(255))
+                    .Dilate(5).Erode(5)
+                    .Erode(2).Dilate(2);
+
 
 
             if (index == 0)
@@ -133,11 +156,16 @@ namespace CompositeSketchRecognition
             }
             else if (index == 1)
             {
-                return image;
+                return drawImage;
             }
             else if (index == 2)
             {
                 return imageCorrectLandmark;
+            }
+            else if (index == 3)
+            {
+                return gradientMagnitude
+                    .Convert<Bgr, Byte>();
             }
             return null;
         }
