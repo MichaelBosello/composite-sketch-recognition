@@ -101,16 +101,15 @@ $RECYCLE.BIN/
 *.userprefs
 
 # Build results
-[Dd]ebug/
+CompositeSketchRecognition/bin/Debug/CompositeSketchRecognition.*
+CompositeSketchRecognition/bin/Release/CompositeSketchRecognition.*
 [Dd]ebugPublic/
-[Rr]elease/
 [Rr]eleases/
 x64/
 x86/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
 bld/
-[Bb]in/
 [Oo]bj/
 [Ll]og/
 
