@@ -18,7 +18,6 @@ namespace CompositeSketchRecognition
         CascadeClassifier haarFrontalFace = new CascadeClassifier(@"..\..\..\haarcascades\haarcascade_frontalface_default.xml");
         CascadeClassifier haarMouth = new CascadeClassifier(@"..\..\..\haarcascades\haarcascade_mcs_mouth.xml");
 
-
         public void search(Image<Bgr, byte> sketch)
         {
 
@@ -148,6 +147,66 @@ namespace CompositeSketchRecognition
                     .Dilate(5).Erode(5)
                     .Erode(2).Dilate(2);
 
+            Rectangle extendedFace = new Rectangle(realFace.X, realFace.Y, realFace.Width, realFace.Height + 35);
+
+
+            Boolean found = false;
+            for (int paddingLeft = 10; !found && paddingLeft < realFace.X; paddingLeft++)
+            {
+                for (int side = realFace.Y; side < realFace.Bottom - 25; side++)
+                {
+                    
+                    if (gradientMagnitude.Data[side, paddingLeft, 0] == 255)
+                    {
+                        found = true;
+                        extendedFace.X = paddingLeft;
+                        break;
+                    }
+                }
+            }
+
+            found = false;
+            for (int paddingRight = image.Width -10; !found && paddingRight > realFace.Right; paddingRight--)
+            {
+                for (int side = realFace.Y; side < realFace.Bottom - 25; side++)
+                {
+                    if (gradientMagnitude.Data[side, paddingRight, 0] == 255)
+                    {
+                        found = true;
+                        extendedFace.Width = paddingRight - extendedFace.X;
+                        break;
+                    }
+                }
+            }
+
+            found = false;
+            for (int paddingTop = 10; !found && paddingTop < realFace.Y; paddingTop++)
+            {
+                for (int side = realFace.X; side < realFace.Right; side++)
+                {
+                    if (gradientMagnitude.Data[paddingTop, side, 0] == 255)
+                    {
+                        found = true;
+                        extendedFace.Height += extendedFace.Y - paddingTop;
+                        extendedFace.Y = paddingTop;
+                        break;
+                    }
+                }
+            }
+
+            imageCorrectLandmark.Draw(extendedFace, new Bgr(Color.GreenYellow), 3);
+
+            /*float[,] srcPoints = { { 221, 156 }, { 4740, 156 }, { 4740, 3347 }, { 221, 3347 } };
+            float[,] dstPoints = { { 371, 356 }, { 4478, 191 }, { 4595, 3092 }, { 487, 3257 } };
+
+            var srcMat = new Matrix<float>(srcPoints);
+            var dstMat = new Matrix<float>(dstPoints);
+            
+            var invertHomogMat = new Matrix<float>(3, 3);
+
+            var homogMat = CvInvoke.FindHomography(srcMat, dstMat, HomographyMethod.Default, 3, null);
+            CvInvoke.Invert(homogMat, invertHomogMat, DecompMethod.LU);
+            CvInvoke.WarpPerspective(srcImage, dstImage, invertHomogMat, (int) Inter.Nearest);*/
 
 
             if (index == 0)
@@ -166,6 +225,10 @@ namespace CompositeSketchRecognition
             {
                 return gradientMagnitude
                     .Convert<Bgr, Byte>();
+            }
+            else if (index == 4)
+            {
+                return imageCorrectLandmark;
             }
             return null;
         }
