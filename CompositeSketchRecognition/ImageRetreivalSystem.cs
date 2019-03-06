@@ -34,17 +34,17 @@ namespace CompositeSketchRecognition
         }
 
 
-
-
-        public Image<Bgr, byte> getStepImage(String imagePath, int index)
+        public void getFaceAndLandmarks(Image<Bgr, byte> image, out Rectangle realFace, out Rectangle[] realEyes, out Rectangle realMouth, out Rectangle[] faces, out Rectangle[] eyes, out Rectangle[] mouths)
         {
-            Image<Bgr, byte> image = new Image<Bgr, byte>(imagePath);
-            Image<Bgr, byte> drawImage = image.Copy();
-            Image<Bgr, byte> imageCorrectLandmark = drawImage.Copy();
-            var grayImage = drawImage.Convert<Gray, Byte>();
-            
-            var faces = haarFrontalFace.DetectMultiScale(grayImage,
-                1.05, 15, new Size(drawImage.Width/8, drawImage.Height/8));
+            realFace = new Rectangle();
+            realMouth = new Rectangle();
+            realEyes = null;
+            eyes = null;
+            mouths = null;
+
+            var grayImage = image.Convert<Gray, Byte>();
+            faces = haarFrontalFace.DetectMultiScale(grayImage,
+                1.05, 15, new Size(image.Width / 8, image.Height / 8));
             if (faces.Length == 0)
             {
                 CvInvoke.EqualizeHist(grayImage, grayImage);
@@ -52,80 +52,63 @@ namespace CompositeSketchRecognition
                 1.01, 15);
                 if (faces.Length == 0)
                 {
-                    return drawImage;
+                    return;
                 }
             }
 
-            var realFace = faces.First();
+            realFace = faces.First();
             foreach (var face in faces)
             {
-                drawImage.Draw(face, new Bgr(Color.LightBlue), 3);
                 if (face.Y < realFace.Y)
                 {
                     realFace = face;
                 }
             }
-            drawImage.Draw(realFace, new Bgr(Color.DarkBlue), 3);
-            imageCorrectLandmark.Draw(realFace, new Bgr(Color.DarkBlue), 3);
 
-            var cutFace = drawImage.GetSubRect(realFace);
-            var cutFaceCorrectLandmark = imageCorrectLandmark.GetSubRect(realFace);
+            var cutFace = image.GetSubRect(realFace);
             var grayCutFace = grayImage.GetSubRect(realFace);
 
-            
-
-            var eyes = haarEye.DetectMultiScale(cutFace,
+            eyes = haarEye.DetectMultiScale(cutFace,
                 1.01, 15);
-            foreach (var eye in eyes)
-            {
-                cutFace.Draw(eye, new Bgr(Color.Magenta), 3);
-            }
-            var realEyes = eyes.ToList();
+            var realEyesList = eyes.ToList();
             foreach (var eye in eyes)
             {
                 if (eye.Y > cutFace.Height * 0.4)
                 {
-                    realEyes.Remove(eye);
+                    realEyesList.Remove(eye);
                 }
             }
-            while (realEyes.Count > 2)
+            while (realEyesList.Count > 2)
             {
-                var top = realEyes.First();
-                foreach (var eye in realEyes)
+                var top = realEyesList.First();
+                foreach (var eye in realEyesList)
                 {
                     if (eye.Y + eye.Height < top.Y + top.Height)
                     {
                         top = eye;
                     }
                 }
-                realEyes.Remove(top);
+                realEyesList.Remove(top);
             }
+            realEyes = realEyesList.ToArray();
 
-            foreach (var eye in realEyes)
-            {
-                cutFace.Draw(eye, new Bgr(Color.DarkMagenta), 3);
-                cutFaceCorrectLandmark.Draw(eye, new Bgr(Color.DarkMagenta), 3);
-            }
-
-            var mouths = haarMouth.DetectMultiScale(grayCutFace,
+            mouths = haarMouth.DetectMultiScale(grayCutFace,
                 1.01, 15, new Size(grayCutFace.Width / 8, grayCutFace.Height / 8));
             if (mouths.Length > 0)
             {
-                var realMouth = mouths.First();
+                realMouth = mouths.First();
                 foreach (var mouth in mouths)
                 {
-                    cutFace.Draw(realMouth, new Bgr(Color.LightGreen), 3);
                     if (mouth.Y + mouth.Height > realMouth.Y + realMouth.Height)
                     {
                         realMouth = mouth;
                     }
                 }
-                cutFace.Draw(realMouth, new Bgr(Color.DarkGreen), 3);
-                cutFaceCorrectLandmark.Draw(realMouth, new Bgr(Color.DarkGreen), 3);
             }
+        }
 
-    
-
+        public Image<Gray, float> faceOutline(Image<Bgr, byte> image)
+        {
             var imageGray = image.Convert<Gray, byte>();
             var gx = imageGray.Sobel(1, 0, 3);
             var gy = imageGray.Sobel(0, 1, 3);
@@ -147,16 +130,20 @@ namespace CompositeSketchRecognition
                     .Dilate(5).Erode(5)
                     .Erode(2).Dilate(2);
 
-            Rectangle extendedFace = new Rectangle(realFace.X, realFace.Y, realFace.Width, realFace.Height + 35);
+            return gradientMagnitude;
+        }
 
+        public Rectangle extendFace(Image<Bgr, Byte> image, Rectangle face, Image<Gray, float> faceOutline)
+        {
+            Rectangle extendedFace = new Rectangle(face.X, face.Y, face.Width, face.Height + 35);
 
             Boolean found = false;
-            for (int paddingLeft = 10; !found && paddingLeft < realFace.X; paddingLeft++)
+            for (int paddingLeft = 10; !found && paddingLeft < face.X; paddingLeft++)
             {
-                for (int side = realFace.Y; side < realFace.Bottom - 25; side++)
+                for (int side = face.Y; side < face.Bottom - 25; side++)
                 {
-                    
-                    if (gradientMagnitude.Data[side, paddingLeft, 0] == 255)
+
+                    if (faceOutline.Data[side, paddingLeft, 0] == 255)
                     {
                         found = true;
                         extendedFace.X = paddingLeft;
@@ -166,11 +153,11 @@ namespace CompositeSketchRecognition
             }
 
             found = false;
-            for (int paddingRight = image.Width -10; !found && paddingRight > realFace.Right; paddingRight--)
+            for (int paddingRight = image.Width - 10; !found && paddingRight > face.Right; paddingRight--)
             {
-                for (int side = realFace.Y; side < realFace.Bottom - 25; side++)
+                for (int side = face.Y; side < face.Bottom - 25; side++)
                 {
-                    if (gradientMagnitude.Data[side, paddingRight, 0] == 255)
+                    if (faceOutline.Data[side, paddingRight, 0] == 255)
                     {
                         found = true;
                         extendedFace.Width = paddingRight - extendedFace.X;
@@ -180,11 +167,11 @@ namespace CompositeSketchRecognition
             }
 
             found = false;
-            for (int paddingTop = 10; !found && paddingTop < realFace.Y; paddingTop++)
+            for (int paddingTop = 10; !found && paddingTop < face.Y; paddingTop++)
             {
-                for (int side = realFace.X; side < realFace.Right; side++)
+                for (int side = face.X; side < face.Right; side++)
                 {
-                    if (gradientMagnitude.Data[paddingTop, side, 0] == 255)
+                    if (faceOutline.Data[paddingTop, side, 0] == 255)
                     {
                         found = true;
                         extendedFace.Height += extendedFace.Y - paddingTop;
@@ -194,7 +181,72 @@ namespace CompositeSketchRecognition
                 }
             }
 
-            imageCorrectLandmark.Draw(extendedFace, new Bgr(Color.GreenYellow), 3);
+            return extendedFace;
+        }
+
+        public Image<Bgr, byte> getStepImage(String imagePath, int index)
+        {
+            Image<Bgr, byte> image = new Image<Bgr, byte>(imagePath);
+
+            if (index == 0)
+            {
+                return new Image<Bgr, byte>(imagePath);
+            }
+
+            Rectangle realFace;
+            Rectangle[] realEyes;
+            Rectangle realMouth;
+            Rectangle[] faces;
+            Rectangle[] eyes;
+            Rectangle[] mouths;
+            getFaceAndLandmarks(image, out realFace, out realEyes, out realMouth, out faces, out eyes, out mouths);
+
+            if (index == 1 || index == 2 || index == 4)
+            {
+                Image<Bgr, byte> drawImage = image.Copy();
+                var cutFace = drawImage.GetSubRect(realFace);
+
+                if (index == 1)
+                {
+                    foreach (var face in faces)
+                    {
+                        drawImage.Draw(face, new Bgr(Color.LightBlue), 3);
+                    }
+                    foreach (var eye in eyes)
+                    {
+                        cutFace.Draw(eye, new Bgr(Color.Magenta), 3);
+                    }
+                    foreach (var mouth in mouths)
+                    {
+                        cutFace.Draw(mouth, new Bgr(Color.LightGreen), 3);
+                    }
+                }
+                
+                foreach (var eye in realEyes)
+                {
+                    cutFace.Draw(eye, new Bgr(Color.DarkMagenta), 3);
+                }
+                cutFace.Draw(realMouth, new Bgr(Color.DarkGreen), 3);
+
+                if(index == 4)
+                {
+                    drawImage.Draw(extendFace(image, realFace, faceOutline(image)), new Bgr(Color.GreenYellow), 3);
+                } else
+                {
+                    drawImage.Draw(realFace, new Bgr(Color.DarkBlue), 3);
+                }
+
+                return drawImage;
+            }
+            if (index == 3)
+            {
+                return faceOutline(image).Convert<Bgr, byte>();
+            }
+            if (index == 5)
+            {
+
+            }
+
 
             /*float[,] srcPoints = { { 221, 156 }, { 4740, 156 }, { 4740, 3347 }, { 221, 3347 } };
             float[,] dstPoints = { { 371, 356 }, { 4478, 191 }, { 4595, 3092 }, { 487, 3257 } };
@@ -209,27 +261,9 @@ namespace CompositeSketchRecognition
             CvInvoke.WarpPerspective(srcImage, dstImage, invertHomogMat, (int) Inter.Nearest);*/
 
 
-            if (index == 0)
-            {
-                return new Image<Bgr, byte>(imagePath);
-            }
-            else if (index == 1)
-            {
-                return drawImage;
-            }
-            else if (index == 2)
-            {
-                return imageCorrectLandmark;
-            }
-            else if (index == 3)
-            {
-                return gradientMagnitude
-                    .Convert<Bgr, Byte>();
-            }
-            else if (index == 4)
-            {
-                return imageCorrectLandmark;
-            }
+
+
+
             return null;
         }
     }
