@@ -197,12 +197,16 @@ namespace CompositeSketchRecognition
             rightEye = new Point(rEye.X + rEye.Width / 2, rEye.Y + rEye.Height / 2);
         }
 
-        public Image<Bgr, byte> alignEyes(Image<Bgr, byte> face, Point leftEye, Point rightEye)
+        public Image<Bgr, byte> alignEyes(Image<Bgr, byte> face, Point leftEye, Point rightEye, out Point rotatedLeftEye, out Point rotatedRightEye)
         {
             var deltaY = leftEye.Y - rightEye.Y;
             var deltaX = leftEye.X - rightEye.X;
             double degrees = (Math.Atan2(deltaY, deltaX) * 180) / Math.PI;
             degrees = 180 - degrees;
+            leftEye.Y -= deltaY / 2;
+            rightEye.Y += deltaY / 2;
+            rotatedLeftEye = leftEye;
+            rotatedRightEye = rightEye;
             return face.Rotate(degrees, new Bgr(255, 255, 255));
         }
 
@@ -269,31 +273,94 @@ namespace CompositeSketchRecognition
 
             if (sketchPath != null)
             {
-                var cutFace = image.GetSubRect(extendFace(image, realFace, faceOutline(image)));
+                var extendedFace = extendFace(image, realFace, faceOutline(image));
+                var cutFace = image.GetSubRect(extendedFace);
 
                 Rectangle sketchRealFace;
                 Rectangle[] sketchRealEyes;
                 Rectangle sketchRealMouth;
                 Image<Bgr, byte> sketch = new Image<Bgr, byte>(sketchPath);
                 getFaceAndLandmarks(sketch, out sketchRealFace, out sketchRealEyes, out sketchRealMouth, out faces, out eyes, out mouths);
+                var extendedSketchface = extendFace(sketch, sketchRealFace, faceOutline(sketch));
+                var sketchCutFace = sketch.GetSubRect(extendedSketchface);
 
-                var sketchCutFace = sketch.GetSubRect(extendFace(sketch, sketchRealFace, faceOutline(sketch)));
-
-                if (realEyes.Length == 2)
+                if (realEyes.Length == 2 && sketchRealEyes.Length == 2)
                 {
+                    Point sketchLeftEye;
+                    Point sketchRightEye;
+                    getEyesCenter(sketchRealEyes, out sketchLeftEye, out sketchRightEye);
+                    sketchLeftEye.X += sketchRealFace.X - extendedSketchface.X;
+                    sketchLeftEye.Y += sketchRealFace.Y - extendedSketchface.Y;
+                    sketchRightEye.X += sketchRealFace.X - extendedSketchface.X;
+                    sketchRightEye.Y += sketchRealFace.Y - extendedSketchface.Y;
+
                     Point leftEye;
                     Point rightEye;
                     getEyesCenter(realEyes, out leftEye, out rightEye);
-                    cutFace = alignEyes(cutFace, leftEye, rightEye);
+                    leftEye.X += realFace.X - extendedFace.X;
+                    leftEye.Y += realFace.Y - extendedFace.Y;
+                    rightEye.X += realFace.X - extendedFace.X;
+                    rightEye.Y += realFace.Y - extendedFace.Y;
+                    Point rotatedLeftEye;
+                    Point rotatedRightEye;
+                    cutFace = alignEyes(cutFace, leftEye, rightEye, out rotatedLeftEye, out rotatedRightEye);
+
+                    if (index == 5)
+                    {
+                        CvInvoke.Circle(cutFace, rotatedLeftEye, 2, new MCvScalar(255, 255, 255));
+                        CvInvoke.Circle(cutFace, rotatedRightEye, 2, new MCvScalar(255, 255, 255));
+                        return cutFace;
+                    }
+                    
+                    double distanceEyeDifference = (double)(sketchRightEye.X - sketchLeftEye.X) / (rightEye.X - leftEye.X);
+                    int newWidth = (int) (cutFace.Width * distanceEyeDifference);
+                    int newHeight = (int)(cutFace.Height * distanceEyeDifference);
+                    cutFace = cutFace.Resize(newWidth, newHeight, Inter.Linear);
+                    rotatedLeftEye.X = (int) (rotatedLeftEye.X * distanceEyeDifference);
+                    rotatedLeftEye.Y = (int)(rotatedLeftEye.Y * distanceEyeDifference);
+                    rotatedRightEye.X = (int)(rotatedRightEye.X * distanceEyeDifference);
+                    rotatedRightEye.Y = (int)(rotatedRightEye.Y * distanceEyeDifference);
+
+                    Image<Bgr, byte> cutFaceResized = new Image<Bgr, byte>(sketchCutFace.Width, sketchCutFace.Height);
+
+                    var leftSide = rotatedLeftEye.X - sketchLeftEye.X;
+                    var px = leftSide;
+                    var py = rotatedLeftEye.Y - sketchLeftEye.Y;
+
+                    for (int y = 0; y < sketchCutFace.Height; y++)
+                    {
+                        for (int x = 0; x < sketchCutFace.Width; x++)
+                        {
+                            if (px >= 0 && py >= 0 && px < cutFace.Width && py < cutFace.Height)
+                            {
+                                cutFaceResized.Data[y, x, 0] = cutFace.Data[py, px, 0];
+                                cutFaceResized.Data[y, x, 1] = cutFace.Data[py, px, 1];
+                                cutFaceResized.Data[y, x, 2] = cutFace.Data[py, px, 2];
+                            }
+                            else
+                            {
+                                cutFaceResized.Data[y, x, 0] = 255;
+                                cutFaceResized.Data[y, x, 1] = 255;
+                                cutFaceResized.Data[y, x, 2] = 255;
+                            }
+                            px++;
+                        }
+                        px = leftSide;
+                        py++;
+                    }
+
+                    if (index == 6)
+                    {
+                        Image<Bgr, byte> step6 = new Image<Bgr, byte>(sketchCutFace.Width, sketchCutFace.Height);
+                        CvInvoke.AddWeighted(cutFaceResized, 0.6, sketchCutFace, 0.3, 0, step6);
+                        CvInvoke.Circle(step6, rotatedLeftEye, 2, new MCvScalar(255, 255, 255));
+                        CvInvoke.Circle(step6, sketchLeftEye, 3, new MCvScalar(0, 0, 0));
+                        return step6;
+                    }
                 }
                 else
                 {
 
-                }
-
-                if (index == 5)
-                {
-                    return cutFace;
                 }
             }
 
