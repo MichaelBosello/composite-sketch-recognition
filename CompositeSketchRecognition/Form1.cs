@@ -25,6 +25,7 @@ namespace CompositeSketchRecognition
         int currentIndex = 0;
         int currentStep = 0;
         String currentStepImage = "";
+        String otherImage = "";
 
         public Form1()
         {
@@ -157,13 +158,30 @@ namespace CompositeSketchRecognition
         private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
             currentStepImage = PHOTO_PATH + listBox1.SelectedItem;
-            imageBoxStep.Image = imageRetreivalSystem.getStepImage(currentStepImage, currentStep);
+
+            if (listBox2.SelectedItem != null)
+            {
+                otherImage = SKETCH_PATH + listBox2.SelectedItem;
+            }
+            else
+            {
+                otherImage = null;
+            }
+            imageBoxStep.Image = imageRetreivalSystem.getStepImage(currentStepImage, currentStep, otherImage);
         }
 
         private void listBox2_SelectedIndexChanged(object sender, EventArgs e)
         {
             currentStepImage = SKETCH_PATH + listBox2.SelectedItem;
-            imageBoxStep.Image = imageRetreivalSystem.getStepImage(currentStepImage, currentStep);
+            if (listBox1.SelectedItem != null)
+            {
+                otherImage = PHOTO_PATH + listBox1.SelectedItem;
+            }
+            else
+            {
+                otherImage = null;
+            }
+            imageBoxStep.Image = imageRetreivalSystem.getStepImage(currentStepImage, currentStep, otherImage);
         }
 
         private void buttonStepPre_Click(object sender, EventArgs e)
@@ -172,7 +190,7 @@ namespace CompositeSketchRecognition
             {
                 currentStep--;
                 labelStep.Text = currentStep.ToString();
-                imageBoxStep.Image = imageRetreivalSystem.getStepImage(currentStepImage, currentStep);
+                imageBoxStep.Image = imageRetreivalSystem.getStepImage(currentStepImage, currentStep, otherImage);
             }
         }
 
@@ -182,7 +200,7 @@ namespace CompositeSketchRecognition
             {
                 currentStep++;
                 labelStep.Text = currentStep.ToString();
-                imageBoxStep.Image = imageRetreivalSystem.getStepImage(currentStepImage, currentStep);
+                imageBoxStep.Image = imageRetreivalSystem.getStepImage(currentStepImage, currentStep, otherImage);
             }
         }
     }
