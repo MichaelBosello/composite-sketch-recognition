@@ -135,7 +135,7 @@ namespace CompositeSketchRecognition
 
         public Rectangle extendFace(Image<Bgr, Byte> image, Rectangle face, Image<Gray, float> faceOutline)
         {
-            Rectangle extendedFace = new Rectangle(face.X, face.Y, face.Width, face.Height + 35);
+            Rectangle extendedFace = new Rectangle(face.X, face.Y, face.Width, face.Height + 60);
 
             Boolean found = false;
             for (int paddingLeft = 10; !found && paddingLeft < face.X; paddingLeft++)
@@ -182,6 +182,28 @@ namespace CompositeSketchRecognition
             }
 
             return extendedFace;
+        }
+
+        public void getEyesCenter(Rectangle[] eyes, out Point leftEye, out Point rightEye)
+        {
+            var lEye = eyes.First();
+            var rEye = eyes.Last();
+            if (lEye.X > rEye.X)
+            {
+                lEye = eyes.Last();
+                rEye = eyes.First();
+            }
+            leftEye = new Point(lEye.X + lEye.Width / 2, lEye.Y + lEye.Height / 2);
+            rightEye = new Point(rEye.X + rEye.Width / 2, rEye.Y + rEye.Height / 2);
+        }
+
+        public Image<Bgr, byte> alignEyes(Image<Bgr, byte> face, Point leftEye, Point rightEye)
+        {
+            var deltaY = leftEye.Y - rightEye.Y;
+            var deltaX = leftEye.X - rightEye.X;
+            double degrees = (Math.Atan2(deltaY, deltaX) * 180) / Math.PI;
+            degrees = 180 - degrees;
+            return face.Rotate(degrees, new Bgr(255, 255, 255));
         }
 
         public Image<Bgr, byte> getStepImage(String imagePath, int index, String sketchPath)
@@ -247,42 +269,26 @@ namespace CompositeSketchRecognition
 
             if (sketchPath != null)
             {
-                var cutFace = image.GetSubRect(realFace);
+                var cutFace = image.GetSubRect(extendFace(image, realFace, faceOutline(image)));
 
                 Rectangle sketchRealFace;
                 Rectangle[] sketchRealEyes;
                 Rectangle sketchRealMouth;
-
                 Image<Bgr, byte> sketch = new Image<Bgr, byte>(sketchPath);
                 getFaceAndLandmarks(sketch, out sketchRealFace, out sketchRealEyes, out sketchRealMouth, out faces, out eyes, out mouths);
-                var sketchCutFace = sketch.GetSubRect(sketchRealFace);
+
+                var sketchCutFace = sketch.GetSubRect(extendFace(sketch, sketchRealFace, faceOutline(sketch)));
 
                 if (realEyes.Length == 2)
                 {
+                    Point leftEye;
+                    Point rightEye;
+                    getEyesCenter(realEyes, out leftEye, out rightEye);
+                    cutFace = alignEyes(cutFace, leftEye, rightEye);
+                }
+                else
+                {
 
-                    float[,] srcPoints =
-                    {
-                        { realEyes.First().X + realEyes.First().Width/2 - 100, realEyes.First().Y + realEyes.First().Height/2 -100},
-                        { realEyes.First().X + realEyes.First().Width/2 + 100, realEyes.First().Y + realEyes.First().Height/2 +100},
-                        { realEyes.Last().X + realEyes.Last().Width/2 - 100, realEyes.Last().Y + realEyes.Last().Height/2 - 100},
-                        { realEyes.Last().X + realEyes.Last().Width/2 + 100, realEyes.Last().Y + realEyes.Last().Height/2 + 100}
-                    };
-                    float[,] dstPoints =
-                    {
-                        { sketchRealEyes.First().X + sketchRealEyes.First().Width/2 - 100, sketchRealEyes.First().Y + sketchRealEyes.First().Height/2 - 100},
-                        { sketchRealEyes.First().X + sketchRealEyes.First().Width/2 + 100, sketchRealEyes.First().Y + sketchRealEyes.First().Height/2 + 100},
-                        { sketchRealEyes.Last().X + sketchRealEyes.Last().Width/2 - 100, sketchRealEyes.Last().Y + sketchRealEyes.Last().Height/2 - 100},
-                        { sketchRealEyes.Last().X + sketchRealEyes.Last().Width/2 + 100, sketchRealEyes.Last().Y + sketchRealEyes.Last().Height/2 + 100}
-                    };
-
-                    var srcMat = new Matrix<float>(srcPoints);
-                    var dstMat = new Matrix<float>(dstPoints);
-
-                    var invertHomogMat = new Matrix<float>(3, 3);
-
-                    var homogMat = CvInvoke.FindHomography(srcMat, dstMat, HomographyMethod.Default, 3, null);
-                    CvInvoke.Invert(homogMat, invertHomogMat, DecompMethod.LU);
-                    CvInvoke.WarpPerspective(cutFace, cutFace, invertHomogMat, cutFace.Size, Inter.Nearest);
                 }
 
                 if (index == 5)
