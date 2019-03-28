@@ -26,6 +26,7 @@ namespace CompositeSketchRecognition
         int currentStep = 0;
         String currentStepImage = "";
         String otherImage = "";
+        bool inverted = false;
 
         public Form1()
         {
@@ -167,7 +168,8 @@ namespace CompositeSketchRecognition
             {
                 otherImage = null;
             }
-            imageBoxStep.Image = imageRetreivalSystem.getStepImage(currentStepImage, currentStep, otherImage);
+            inverted = false;
+            imageBoxStep.Image = imageRetreivalSystem.getStepImage(currentStepImage, currentStep, otherImage, inverted);
         }
 
         private void listBox2_SelectedIndexChanged(object sender, EventArgs e)
@@ -181,7 +183,8 @@ namespace CompositeSketchRecognition
             {
                 otherImage = null;
             }
-            imageBoxStep.Image = imageRetreivalSystem.getStepImage(currentStepImage, currentStep, otherImage);
+            inverted = true;
+            imageBoxStep.Image = imageRetreivalSystem.getStepImage(currentStepImage, currentStep, otherImage, inverted);
         }
 
         private void buttonStepPre_Click(object sender, EventArgs e)
@@ -190,7 +193,7 @@ namespace CompositeSketchRecognition
             {
                 currentStep--;
                 labelStep.Text = currentStep.ToString();
-                imageBoxStep.Image = imageRetreivalSystem.getStepImage(currentStepImage, currentStep, otherImage);
+                imageBoxStep.Image = imageRetreivalSystem.getStepImage(currentStepImage, currentStep, otherImage, inverted);
             }
         }
 
@@ -200,7 +203,7 @@ namespace CompositeSketchRecognition
             {
                 currentStep++;
                 labelStep.Text = currentStep.ToString();
-                imageBoxStep.Image = imageRetreivalSystem.getStepImage(currentStepImage, currentStep, otherImage);
+                imageBoxStep.Image = imageRetreivalSystem.getStepImage(currentStepImage, currentStep, otherImage, inverted);
             }
         }
     }

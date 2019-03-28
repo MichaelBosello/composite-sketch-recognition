@@ -382,7 +382,7 @@ namespace CompositeSketchRecognition
             return result;
         }
 
-        public Image<Bgr, byte> getStepImage(String imagePath, int index, String sketchPath)
+        public Image<Bgr, byte> getStepImage(String imagePath, int index, String sketchPath, bool inverted)
         {
             if (imagePath == null || imagePath.Equals(""))
             {
@@ -445,12 +445,20 @@ namespace CompositeSketchRecognition
             {
                 return faceOutline(image).Convert<Bgr, byte>();
             }
-
-            var extendedFace = extendFace(image, realFace, faceOutline(image));
-            var cutFace = image.GetSubRect(extendedFace);
+            
 
             if (sketchPath != null)
             {
+                if (inverted)
+                {
+                    image = new Image<Bgr, byte>(sketchPath);
+                    getFaceAndLandmarks(image, out realFace, out realEyes, out realMouth, out faces, out eyes, out mouths);
+                    sketchPath = imagePath;
+                }
+
+                var extendedFace = extendFace(image, realFace, faceOutline(image));
+                var cutFace = image.GetSubRect(extendedFace);
+
                 Rectangle sketchRealFace;
                 Rectangle[] sketchRealEyes;
                 Rectangle sketchRealMouth;
