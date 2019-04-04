@@ -71,29 +71,34 @@ namespace CompositeSketchRecognition
 
             currentIndex = 0;
 
-
-            using (OpenFileDialog dlg = new OpenFileDialog())
-            {
-                if (dlg.ShowDialog() == DialogResult.OK)
-                {
-                    labelSketchID.Text = dlg.FileName;
-                    sketch.Image = new Image<Bgr, byte>(labelSketchID.Text);
-                }
-            }
-
             if (!backgroundWorker.IsBusy)
             {
+                using (OpenFileDialog dlg = new OpenFileDialog())
+                {
+                    if (dlg.ShowDialog() == DialogResult.OK)
+                    {
+                        labelSketchID.Text = dlg.FileName;
+                        sketch.Image = new Image<Bgr, byte>(labelSketchID.Text);
+                    }
+                }
                 backgroundWorker.RunWorkerAsync();
             }
             else
             {
                 backgroundWorker.CancelAsync();
+                buttonQuery.Text = "Query";
             }
         }
 
         private void backgroundWorker_DoWork(object sender, DoWorkEventArgs e)
         {
-            imageRetreivalSystem.search((Image<Bgr, byte>)sketch.Image);
+            var backgroundWorker = sender as BackgroundWorker;
+            imageRetreivalSystem.search(labelSketchID.Text, backgroundWorker);
+        }
+
+        private void backgroundWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            progressBar.Value = e.ProgressPercentage;
         }
 
         private void backgroundWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
