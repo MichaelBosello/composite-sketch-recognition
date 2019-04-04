@@ -54,6 +54,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FaceDetection.cs" />
+    <Compile Include="HogDescriptor.cs" />
     <Compile Include="ImageRetreivalSystem.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
