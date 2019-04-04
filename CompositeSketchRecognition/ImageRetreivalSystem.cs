@@ -28,11 +28,19 @@ namespace CompositeSketchRecognition
         }
 
 
-        
+        double euclideanDistance(float[] q, float[] p)
+        {
+            double distance = 0;
+            for (int i = 0; i < q.Length; i++)
+            {
+                distance += Math.Pow(q[i] - p[i], 2);
+            }
+            return Math.Sqrt(distance);
+        }
 
-        
 
-        
+
+
 
         public Image<Bgr, byte> getStepImage(String imagePath, int index, String sketchPath, bool inverted)
         {
@@ -76,17 +84,18 @@ namespace CompositeSketchRecognition
                         cutDrawFace.Draw(mouth, new Bgr(Color.LightGreen), 3);
                     }
                 }
-                
+
                 foreach (var eye in realEyes)
                 {
                     cutDrawFace.Draw(eye, new Bgr(Color.DarkMagenta), 3);
                 }
                 cutDrawFace.Draw(realMouth, new Bgr(Color.DarkGreen), 3);
 
-                if(index == 4)
+                if (index == 4)
                 {
                     drawImage.Draw(faceDetection.extendFace(image, realFace, faceDetection.faceOutline(image)), new Bgr(Color.GreenYellow), 3);
-                } else
+                }
+                else
                 {
                     drawImage.Draw(realFace, new Bgr(Color.DarkBlue), 3);
                 }
@@ -97,7 +106,11 @@ namespace CompositeSketchRecognition
             {
                 return faceDetection.faceOutline(image).Convert<Bgr, byte>();
             }
-            
+
+
+
+
+
 
             if (sketchPath != null)
             {
@@ -110,6 +123,33 @@ namespace CompositeSketchRecognition
 
                 var extendedFace = faceDetection.extendFace(image, realFace, faceDetection.faceOutline(image));
                 var cutFace = image.GetSubRect(extendedFace);
+
+                realMouth.X += realFace.X - extendedFace.X;
+                realMouth.Y += realFace.Y - extendedFace.Y;
+
+                Point leftEye = new Point();
+                Point rightEye = new Point();
+                if (realEyes.Length == 2)
+                {
+                    faceDetection.getEyesCenter(realEyes, out leftEye, out rightEye);
+                    leftEye.X += realFace.X - extendedFace.X;
+                    leftEye.Y += realFace.Y - extendedFace.Y;
+                    rightEye.X += realFace.X - extendedFace.X;
+                    rightEye.Y += realFace.Y - extendedFace.Y;
+                    Point rotatedLeftEye;
+                    Point rotatedRightEye;
+                    cutFace = faceDetection.alignEyes(cutFace, leftEye, rightEye, out rotatedLeftEye, out rotatedRightEye);
+                    leftEye = rotatedLeftEye;
+                    rightEye = rotatedRightEye;
+
+                    if (index == 5)
+                    {
+                        CvInvoke.Circle(cutFace, leftEye, 2, new MCvScalar(255, 255, 255));
+                        CvInvoke.Circle(cutFace, rightEye, 2, new MCvScalar(255, 255, 255));
+                        cutFace.Draw(realMouth, new Bgr(Color.DarkGreen), 3);
+                        return cutFace;
+                    }
+                }
 
                 Rectangle sketchRealFace;
                 Rectangle[] sketchRealEyes;
@@ -129,91 +169,31 @@ namespace CompositeSketchRecognition
                     sketchRightEye.X += sketchRealFace.X - extendedSketchface.X;
                     sketchRightEye.Y += sketchRealFace.Y - extendedSketchface.Y;
 
-                    Point leftEye;
-                    Point rightEye;
-                    faceDetection.getEyesCenter(realEyes, out leftEye, out rightEye);
-                    leftEye.X += realFace.X - extendedFace.X;
-                    leftEye.Y += realFace.Y - extendedFace.Y;
-                    rightEye.X += realFace.X - extendedFace.X;
-                    rightEye.Y += realFace.Y - extendedFace.Y;
-                    Point rotatedLeftEye;
-                    Point rotatedRightEye;
-                    cutFace = faceDetection.alignEyes(cutFace, leftEye, rightEye, out rotatedLeftEye, out rotatedRightEye);
-
-                    if (index == 5)
-                    {
-                        CvInvoke.Circle(cutFace, rotatedLeftEye, 2, new MCvScalar(255, 255, 255));
-                        CvInvoke.Circle(cutFace, rotatedRightEye, 2, new MCvScalar(255, 255, 255));
-                        return cutFace;
-                    }
-                    
-                    double distanceEyeDifference = (double)(sketchRightEye.X - sketchLeftEye.X) / (rightEye.X - leftEye.X);
-                    int newWidth = (int) (cutFace.Width * distanceEyeDifference);
-                    int newHeight = (int)(cutFace.Height * distanceEyeDifference);
-                    cutFace = cutFace.Resize(newWidth, newHeight, Inter.Linear);
-                    rotatedLeftEye.X = (int) (rotatedLeftEye.X * distanceEyeDifference);
-                    rotatedLeftEye.Y = (int)(rotatedLeftEye.Y * distanceEyeDifference);
-                    rotatedRightEye.X = (int)(rotatedRightEye.X * distanceEyeDifference);
-                    rotatedRightEye.Y = (int)(rotatedRightEye.Y * distanceEyeDifference);
-
-                    Image<Bgr, byte> cutFaceResized = new Image<Bgr, byte>(sketchCutFace.Width, sketchCutFace.Height);
-
-                    var leftSide = rotatedLeftEye.X - sketchLeftEye.X;
-                    var px = leftSide;
-                    var py = rotatedLeftEye.Y - sketchLeftEye.Y;
-
-                    for (int y = 0; y < sketchCutFace.Height; y++)
-                    {
-                        for (int x = 0; x < sketchCutFace.Width; x++)
-                        {
-                            if (px >= 0 && py >= 0 && px < cutFace.Width && py < cutFace.Height)
-                            {
-                                cutFaceResized.Data[y, x, 0] = cutFace.Data[py, px, 0];
-                                cutFaceResized.Data[y, x, 1] = cutFace.Data[py, px, 1];
-                                cutFaceResized.Data[y, x, 2] = cutFace.Data[py, px, 2];
-                            }
-                            else
-                            {
-                                cutFaceResized.Data[y, x, 0] = 255;
-                                cutFaceResized.Data[y, x, 1] = 255;
-                                cutFaceResized.Data[y, x, 2] = 255;
-                            }
-                            px++;
-                        }
-                        px = leftSide;
-                        py++;
-                    }
-
-                    if (index == 6)
-                    {
-                        Image<Bgr, byte> step6 = new Image<Bgr, byte>(sketchCutFace.Width, sketchCutFace.Height);
-                        CvInvoke.AddWeighted(cutFaceResized, 0.6, sketchCutFace, 0.3, 0, step6);
-                        return step6;
-                    }
-
-                    if (index == 7)
-                    {
-                        Image<Bgr, Byte> imageOfInterest = cutFaceResized.Resize(144, 176, Inter.Linear);
-                        return hogDescriptor.hogVisualization(imageOfInterest, hogDescriptor.GetHog(imageOfInterest));
-                    }
-
-                    if (index == 8)
-                    {
-                        Image<Bgr, Byte> imageOfInterest = sketchCutFace.Resize(144, 176, Inter.Linear);
-                        return hogDescriptor.hogVisualization(imageOfInterest, hogDescriptor.GetHog(imageOfInterest));
-                    }
-
-
-
+                    cutFace = faceDetection.alignFaces(cutFace, sketchCutFace, leftEye, rightEye, sketchLeftEye, sketchRightEye);
                 }
-                else
-                {
 
+                if (index == 6)
+                {
+                    Image<Bgr, byte> step6 = new Image<Bgr, byte>(sketchCutFace.Width, sketchCutFace.Height);
+                    CvInvoke.AddWeighted(cutFace, 0.6, sketchCutFace, 0.3, 0, step6);
+                    return step6;
+                }
+
+                if (index == 7)
+                {
+                    Image<Bgr, Byte> imageOfInterest = cutFace.Resize(144, 176, Inter.Linear);
+                    return hogDescriptor.hogVisualization(imageOfInterest, hogDescriptor.GetHog(imageOfInterest));
+                }
+
+                if (index == 8)
+                {
+                    Image<Bgr, Byte> imageOfInterest = sketchCutFace.Resize(144, 176, Inter.Linear);
+                    return hogDescriptor.hogVisualization(imageOfInterest, hogDescriptor.GetHog(imageOfInterest));
                 }
             }
 
 
-            
+
 
             return null;
         }

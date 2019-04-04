@@ -3,6 +3,8 @@ using Emgu.CV.Structure;
 using System;
 using System.Linq;
 using System.Drawing;
+using Emgu.CV.CvEnum;
+
 
 namespace CompositeSketchRecognition
 {
@@ -188,6 +190,49 @@ namespace CompositeSketchRecognition
             rotatedLeftEye = leftEye;
             rotatedRightEye = rightEye;
             return face.Rotate(degrees, new Bgr(255, 255, 255));
+        }
+
+        public Image<Bgr, byte> alignFaces(Image<Bgr, byte> cutFace, Image<Bgr, byte> sketchCutFace,
+            Point face1LeftEye, Point face1RightEye,
+            Point face2LeftEye, Point face2RightEye)
+        {
+            double distanceEyeDifference = (double)(face2RightEye.X - face2LeftEye.X) / (face1RightEye.X - face1LeftEye.X);
+            int newWidth = (int)(cutFace.Width * distanceEyeDifference);
+            int newHeight = (int)(cutFace.Height * distanceEyeDifference);
+            cutFace = cutFace.Resize(newWidth, newHeight, Inter.Linear);
+            face1LeftEye.X = (int)(face1LeftEye.X * distanceEyeDifference);
+            face1LeftEye.Y = (int)(face1LeftEye.Y * distanceEyeDifference);
+            face1RightEye.X = (int)(face1RightEye.X * distanceEyeDifference);
+            face1RightEye.Y = (int)(face1RightEye.Y * distanceEyeDifference);
+
+            Image<Bgr, byte> cutFaceResized = new Image<Bgr, byte>(sketchCutFace.Width, sketchCutFace.Height);
+
+            var leftSide = face1LeftEye.X - face2LeftEye.X;
+            var px = leftSide;
+            var py = face1LeftEye.Y - face2LeftEye.Y;
+
+            for (int y = 0; y < sketchCutFace.Height; y++)
+            {
+                for (int x = 0; x < sketchCutFace.Width; x++)
+                {
+                    if (px >= 0 && py >= 0 && px < cutFace.Width && py < cutFace.Height)
+                    {
+                        cutFaceResized.Data[y, x, 0] = cutFace.Data[py, px, 0];
+                        cutFaceResized.Data[y, x, 1] = cutFace.Data[py, px, 1];
+                        cutFaceResized.Data[y, x, 2] = cutFace.Data[py, px, 2];
+                    }
+                    else
+                    {
+                        cutFaceResized.Data[y, x, 0] = 255;
+                        cutFaceResized.Data[y, x, 1] = 255;
+                        cutFaceResized.Data[y, x, 2] = 255;
+                    }
+                    px++;
+                }
+                px = leftSide;
+                py++;
+            }
+            return cutFaceResized;
         }
     }
 }
