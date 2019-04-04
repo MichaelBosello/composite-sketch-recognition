@@ -83,6 +83,7 @@ namespace CompositeSketchRecognition
                             face.leftEye = rotatedLeftEye;
                             face.rightEye = rotatedRightEye;
                         }
+                        db.Add(face);
 
                         worker.ReportProgress(i * 100 / Files.Length);
                     }
