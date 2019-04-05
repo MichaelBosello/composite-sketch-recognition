@@ -6,7 +6,6 @@ using System.Drawing;
 using System.Collections.Generic;
 using System.IO;
 using System.ComponentModel;
-using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 
 namespace CompositeSketchRecognition
@@ -19,6 +18,9 @@ namespace CompositeSketchRecognition
 
         public const string DB_NAME = "db.bin";
 
+        public const int HOG_WIDTH = 144;
+        public const int HOG_HEIGHT = 176;
+
         FaceDetection faceDetection = new FaceDetection();
         HogDescriptor hogDescriptor = new HogDescriptor();
 
@@ -28,8 +30,9 @@ namespace CompositeSketchRecognition
         String sketchName = "";
 
         public void search(String sketchPath, BackgroundWorker worker)
-        { 
-            this.sketchName = sketchPath.Substring(sketchPath.LastIndexOf('\\'));
+        {
+            if (sketchPath.Equals("")) { return; }
+            this.sketchName = sketchPath.Substring(sketchPath.LastIndexOf('\\') + 1, 5);
             //for out, not important here
             Rectangle[] faces;
             Rectangle[] eyes;
@@ -93,48 +96,49 @@ namespace CompositeSketchRecognition
                     serializer.Serialize(SaveFileStream, db);
                     SaveFileStream.Close();
                 }
-
-                worker.ReportProgress(0);
-                
-                Rectangle sketchRealFace;
-                Rectangle[] sketchRealEyes;
-                Rectangle sketchRealMouth;
-                faceDetection.faceAndLandmarks(sketch, out sketchRealFace, out sketchRealEyes, out sketchRealMouth, out faces, out eyes, out mouths);
-                var extendedSketchface = faceDetection.extendFace(sketch, sketchRealFace, faceDetection.faceOutline(sketch));
-                sketch = sketch.GetSubRect(extendedSketchface);
-
-                sketch = sketch.Resize(144, 176, Inter.Linear);
-                var sketchHog = hogDescriptor.GetHog(sketch);
-
-                Console.WriteLine("Db lenght" + db.Count);
-
-                for (int i = 0; i < db.Count; i++)
-                {
-                    var faceImage = db[i].image;
-                    if (db[i].leftEye != null && db[i].rightEye != null && sketchRealEyes.Length == 2)
-                    {
-                        Point sketchLeftEye;
-                        Point sketchRightEye;
-                        faceDetection.getEyesCenter(sketchRealEyes, out sketchLeftEye, out sketchRightEye);
-                        sketchLeftEye.X += sketchRealFace.X - extendedSketchface.X;
-                        sketchLeftEye.Y += sketchRealFace.Y - extendedSketchface.Y;
-                        sketchRightEye.X += sketchRealFace.X - extendedSketchface.X;
-                        sketchRightEye.Y += sketchRealFace.Y - extendedSketchface.Y;
-
-                        faceImage = faceDetection.alignFaces(db[i].image, sketch, db[i].leftEye, db[i].rightEye, sketchLeftEye, sketchRightEye);
-                    }
-
-                    faceImage = faceImage.Resize(144, 176, Inter.Linear);
-                    var faceHog = hogDescriptor.GetHog(faceImage);
-
-                    result.Add(euclideanDistance(sketchHog, faceHog), db[i].name);
-                    Console.WriteLine("photo name " + db[i].name + " distance " + euclideanDistance(sketchHog, faceHog));
-
-                    worker.ReportProgress(i * 100 / db.Count);
-                }
-
-                Console.WriteLine("result lenght" + result.Keys.Count);
             }
+
+            worker.ReportProgress(0);
+
+            Rectangle sketchRealFace;
+            Rectangle[] sketchRealEyes;
+            Rectangle sketchRealMouth;
+            faceDetection.faceAndLandmarks(sketch, out sketchRealFace, out sketchRealEyes, out sketchRealMouth, out faces, out eyes, out mouths);
+            var extendedSketchface = faceDetection.extendFace(sketch, sketchRealFace, faceDetection.faceOutline(sketch));
+            sketch = sketch.GetSubRect(extendedSketchface);
+
+            var sketchHog = hogDescriptor.GetHog(processForHOG(sketch, true).Resize(HOG_WIDTH, HOG_HEIGHT, Inter.Linear));
+
+            Console.WriteLine("Db lenght" + db.Count);
+
+            result = new SortedDictionary<double, string>();
+
+            for (int i = 0; i < db.Count; i++)
+            {
+                var faceImage = db[i].image;
+                if (db[i].leftEye != null && db[i].rightEye != null
+                    && !db[i].leftEye.Equals(new Point()) && !db[i].rightEye.Equals(new Point())
+                    && sketchRealEyes.Length == 2)
+                {
+                    Point sketchLeftEye;
+                    Point sketchRightEye;
+                    faceDetection.getEyesCenter(sketchRealEyes, out sketchLeftEye, out sketchRightEye);
+                    sketchLeftEye.X += sketchRealFace.X - extendedSketchface.X;
+                    sketchLeftEye.Y += sketchRealFace.Y - extendedSketchface.Y;
+                    sketchRightEye.X += sketchRealFace.X - extendedSketchface.X;
+                    sketchRightEye.Y += sketchRealFace.Y - extendedSketchface.Y;
+
+                    faceImage = faceDetection.alignFaces(db[i].image, sketch, db[i].leftEye, db[i].rightEye, sketchLeftEye, sketchRightEye);
+                }
+                
+                var faceHog = hogDescriptor.GetHog(processForHOG(faceImage, false).Resize(HOG_WIDTH, HOG_HEIGHT, Inter.Linear));
+
+                result.Add(euclideanDistance(sketchHog, faceHog), db[i].name);
+
+                worker.ReportProgress(i * 100 / db.Count);
+            }
+
+            worker.ReportProgress(100);
         }
 
         public Image<Bgr, byte> getImage(int index)
@@ -142,12 +146,12 @@ namespace CompositeSketchRecognition
             int count = 0;
             foreach (var r in result)
             {
-                count++;
                 if (count == index)
                 {
-                    Console.WriteLine("return photo path " + (PHOTO_PATH + r.Value));
+                    Console.WriteLine("photo " + index + " distance: " + r.Key);
                     return new Image<Bgr, byte>(PHOTO_PATH + r.Value);
                 }
+                count++;
             }
             return null;
         }
@@ -158,13 +162,12 @@ namespace CompositeSketchRecognition
             int count = 0;
             foreach (var r in result)
             {
-                count++;
-                Console.WriteLine("Search starting with " + sketchName + " inspect " + r.Value);
                 if (r.Value.StartsWith(sketchName))
                 {
                     index = count;
                     break;
                 }
+                count++;
             }
             return index;
         }
@@ -180,7 +183,34 @@ namespace CompositeSketchRecognition
             return Math.Sqrt(distance);
         }
 
+        Image<Gray, Byte> processForHOG(Image<Bgr, byte> image, bool isSketch)
+        {
+            var edge = image.Convert<Gray, byte>();
+            var gx = edge.Sobel(1, 0, 3);
+            var gy = edge.Sobel(0, 1, 3);
 
+            var gradientMagnitude = new Image<Gray, float>(edge.Width, edge.Height);
+
+            for (int y = 0; y < edge.Height; y++)
+            {
+                for (int x = 0; x < edge.Width; x++)
+                {
+                    var gradient = Math.Sqrt(gx[y, x].Intensity * gx[y, x].Intensity + gy[y, x].Intensity * gy[y, x].Intensity);
+                    gradientMagnitude[y, x] = new Gray(gradient);
+                }
+            }
+            if (isSketch)
+            {
+                gradientMagnitude = gradientMagnitude.ThresholdBinary(new Gray(30), new Gray(255));
+            }
+            else
+            {
+                gradientMagnitude = gradientMagnitude.ThresholdBinary(new Gray(20), new Gray(255));//.Dilate(1).Erode(1);
+            }
+            
+
+            return gradientMagnitude.Convert<Gray, byte>();
+        }
 
 
 
@@ -323,13 +353,13 @@ namespace CompositeSketchRecognition
 
                 if (index == 7)
                 {
-                    Image<Bgr, Byte> imageOfInterest = cutFace.Resize(144, 176, Inter.Linear);
+                    Image<Gray, Byte> imageOfInterest = processForHOG(cutFace, false).Resize(HOG_WIDTH, HOG_HEIGHT, Inter.Linear);
                     return hogDescriptor.hogVisualization(imageOfInterest, hogDescriptor.GetHog(imageOfInterest));
                 }
 
                 if (index == 8)
                 {
-                    Image<Bgr, Byte> imageOfInterest = sketchCutFace.Resize(144, 176, Inter.Linear);
+                    Image<Gray, Byte> imageOfInterest = processForHOG(sketchCutFace, true).Resize(HOG_WIDTH, HOG_HEIGHT, Inter.Linear);
                     return hogDescriptor.hogVisualization(imageOfInterest, hogDescriptor.GetHog(imageOfInterest));
                 }
             }
