@@ -119,10 +119,12 @@ namespace CompositeSketchRecognition
         {
             Rectangle extendedFace = new Rectangle(face.X, face.Y, face.Width, face.Height + 60);
 
+            int middle = face.Y + face.Height / 2; 
+
             Boolean found = false;
             for (int paddingLeft = 10; !found && paddingLeft < face.X; paddingLeft++)
             {
-                for (int side = face.Y; side < face.Bottom - 25; side++)
+                for (int side = face.Y; side < middle; side++)
                 {
 
                     if (faceOutline.Data[side, paddingLeft, 0] == 255)
@@ -134,10 +136,11 @@ namespace CompositeSketchRecognition
                 }
             }
 
+            extendedFace.Width = face.Right - extendedFace.X;
             found = false;
             for (int paddingRight = image.Width - 10; !found && paddingRight > face.Right; paddingRight--)
             {
-                for (int side = face.Y; side < face.Bottom - 25; side++)
+                for (int side = face.Y; side < middle; side++)
                 {
                     if (faceOutline.Data[side, paddingRight, 0] == 255)
                     {
