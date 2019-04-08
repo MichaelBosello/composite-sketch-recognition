@@ -21,6 +21,8 @@ namespace CompositeSketchRecognition
         public const int HOG_WIDTH = 144;
         public const int HOG_HEIGHT = 176;
 
+        public Size standardSize = new Size(208, 256);
+
         FaceDetection faceDetection = new FaceDetection();
         HogDescriptor hogDescriptor = new HogDescriptor();
 
@@ -199,14 +201,14 @@ namespace CompositeSketchRecognition
                     gradientMagnitude[y, x] = new Gray(gradient);
                 }
             }
-            if (isSketch)
+            /*if (isSketch)
             {
                 gradientMagnitude = gradientMagnitude.ThresholdBinary(new Gray(30), new Gray(255));
             }
             else
             {
                 gradientMagnitude = gradientMagnitude.ThresholdBinary(new Gray(20), new Gray(255));//.Dilate(1).Erode(1);
-            }
+            }*/
             
 
             return gradientMagnitude.Convert<Gray, byte>();
@@ -318,7 +320,6 @@ namespace CompositeSketchRecognition
                     {
                         CvInvoke.Circle(cutFace, leftEye, 2, new MCvScalar(255, 255, 255));
                         CvInvoke.Circle(cutFace, rightEye, 2, new MCvScalar(255, 255, 255));
-                        cutFace.Draw(realMouth, new Bgr(Color.DarkGreen), 3);
                         return cutFace;
                     }
                 }
@@ -342,22 +343,46 @@ namespace CompositeSketchRecognition
                     sketchRightEye.Y += sketchRealFace.Y - extendedSketchface.Y;
 
                     cutFace = faceDetection.alignFaces(cutFace, sketchCutFace, leftEye, rightEye, sketchLeftEye, sketchRightEye);
+
+                    double xPercentLeft = (double)sketchLeftEye.X / (double)sketchCutFace.Width;
+                    double xPercentRight = (double)sketchRightEye.X / (double)sketchCutFace.Width;
+                    double yPercentLeft = (double)sketchLeftEye.Y / (double)sketchCutFace.Height;
+                    double yPercentRight = (double)sketchRightEye.Y / (double)sketchCutFace.Height;
+                    double yPercentMouth = (double)sketchRealMouth.Y / (double)sketchCutFace.Height;
+                    double xPercentMouth = (double)sketchRealMouth.X / (double)sketchCutFace.Width;
+                    sketchCutFace = sketchCutFace.Resize(standardSize.Width, standardSize.Height, Inter.Linear);
+                    sketchLeftEye.X = (int)(xPercentLeft * sketchCutFace.Width);
+                    sketchRightEye.X = (int)(xPercentRight * sketchCutFace.Width);
+                    sketchLeftEye.Y = (int)(yPercentLeft * sketchCutFace.Height);
+                    sketchRightEye.Y = (int)(yPercentRight * sketchCutFace.Height);
+                    sketchRealMouth.X = (int)(xPercentMouth * sketchCutFace.Width);
+                    sketchRealMouth.Y = (int)(yPercentMouth * sketchCutFace.Height);
+
+                    cutFace = cutFace.Resize(standardSize.Width, standardSize.Height, Inter.Linear);
+                    realMouth = faceDetection.getMouth(cutFace);
+                }
+                else
+                {
+                    sketchCutFace = sketchCutFace.Resize(standardSize.Width, standardSize.Height, Inter.Linear);
+                    cutFace = cutFace.Resize(standardSize.Width, standardSize.Height, Inter.Linear);
                 }
 
                 if (index == 6)
                 {
-                    Image<Bgr, byte> step6 = new Image<Bgr, byte>(sketchCutFace.Width, sketchCutFace.Height);
-                    CvInvoke.AddWeighted(cutFace, 0.6, sketchCutFace, 0.3, 0, step6);
-                    return step6;
+                    return cutFace;
+                }
+                if (index == 7)
+                {
+                    return sketchCutFace;
                 }
 
-                if (index == 7)
+                if (index == 8)
                 {
                     Image<Gray, Byte> imageOfInterest = processForHOG(cutFace, false).Resize(HOG_WIDTH, HOG_HEIGHT, Inter.Linear);
                     return hogDescriptor.hogVisualization(imageOfInterest, hogDescriptor.GetHog(imageOfInterest));
                 }
 
-                if (index == 8)
+                if (index == 9)
                 {
                     Image<Gray, Byte> imageOfInterest = processForHOG(sketchCutFace, true).Resize(HOG_WIDTH, HOG_HEIGHT, Inter.Linear);
                     return hogDescriptor.hogVisualization(imageOfInterest, hogDescriptor.GetHog(imageOfInterest));

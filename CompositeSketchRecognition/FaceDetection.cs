@@ -89,6 +89,28 @@ namespace CompositeSketchRecognition
             }
         }
 
+        public Rectangle getMouth(Image<Bgr, byte> image)
+        {
+            var mouth = new Rectangle();
+            var grayImage = image.Convert<Gray, Byte>();
+
+            var mouths = haarMouth.DetectMultiScale(grayImage,
+                1.01, 15, new Size(grayImage.Width / 8, grayImage.Height / 8));
+            if (mouths.Length > 0)
+            {
+                mouth = mouths.First();
+                foreach (var m in mouths)
+                {
+                    if (m.Y + m.Height > mouth.Y + mouth.Height)
+                    {
+                        mouth = m;
+                    }
+                }
+            }
+
+            return mouth;
+        }
+
         public Image<Gray, float> faceOutline(Image<Bgr, byte> image)
         {
             var imageGray = image.Convert<Gray, byte>();
