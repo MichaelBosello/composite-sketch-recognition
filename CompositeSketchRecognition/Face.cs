@@ -10,27 +10,47 @@ using System.Threading.Tasks;
 namespace CompositeSketchRecognition
 {
     [Serializable]
-    class Face
+    class FaceDescriptor
     {
-        public Image<Bgr, byte> image { get; set; }
-        public String name { get; set; }
-        public Point leftEye { get; set; }
-        public Point rightEye { get; set; }
-        public Rectangle mouth { get; set; }
+        public String Name { get; set; }
+        public float[] Hair { get; set; }
+        public float[] Brow { get; set; }
+        public float[] Eyes { get; set; }
+        public float[] Nose { get; set; }
+        public float[] Mouth { get; set; }
 
-        public Face(Image<Bgr, byte> image, string name, Point leftEye, Point rightEye, Rectangle mouth)
+        public float[] Descriptor { get; set; }
+
+        public FaceDescriptor(string name, float[] hair, float[] brow, float[] eyes,float[] nose, float[] mouth)
         {
-            this.image = image;
-            this.name = name;
-            this.leftEye = leftEye;
-            this.rightEye = rightEye;
-            this.mouth = mouth;
+            this.Name = name;
+            this.Hair = hair;
+            this.Brow = brow;
+            this.Eyes = eyes;
+            this.Nose = nose;
+            this.Mouth = mouth;
         }
 
-        public Face(Image<Bgr, byte> image, string name)
+        public FaceDescriptor(string name)
         {
-            this.image = image;
-            this.name = name;
+            this.Name = name;
+        }
+
+        public void processDescriptor()
+        {
+            List<float> list = new List<float>();
+            list.AddRange(Hair);
+            list.AddRange(Brow);
+            list.AddRange(Eyes);
+            list.AddRange(Nose);
+            list.AddRange(Mouth);
+            Descriptor = list.ToArray();
+
+            Hair = null;
+            Brow = null;
+            Eyes = null;
+            Nose = null;
+            Mouth = null;
         }
     }
 }

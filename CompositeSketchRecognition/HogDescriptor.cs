@@ -25,7 +25,12 @@ namespace CompositeSketchRecognition
             return result;
         }
 
-
+        public float[] GetHog(Image<Bgr, Byte> image)
+        {
+            HOGDescriptor hog = new HOGDescriptor(image.Size, new Size(16, 16), new Size(8, 8), new Size(8, 8));
+            float[] result = hog.Compute(image);
+            return result;
+        }
 
         public Image<Bgr, Byte> hogVisualization(Image<Gray, Byte> image, float[] descriptorValues)
         {

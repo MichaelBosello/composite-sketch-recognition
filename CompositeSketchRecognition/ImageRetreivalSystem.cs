@@ -16,7 +16,7 @@ namespace CompositeSketchRecognition
         public const string SKETCH_PATH = @"..\..\..\database\UoM-SGFS-v2\Sketches\Set A\Images\";
         public const string PHOTO_EXTENSION = "*.ppm";
 
-        public const string DB_NAME = "db.bin";
+        public const string DB_NAME = "descriptors.bin";
 
         public const int HOG_WIDTH = 144;
         public const int HOG_HEIGHT = 176;
@@ -26,7 +26,7 @@ namespace CompositeSketchRecognition
         FaceDetection faceDetection = new FaceDetection();
         HogDescriptor hogDescriptor = new HogDescriptor();
 
-        List<Face> db;
+        List<FaceDescriptor> descriptors;
         SortedDictionary<double, string> result =
             new SortedDictionary<double, string>();
         String sketchName = "";
@@ -34,47 +34,40 @@ namespace CompositeSketchRecognition
         public void search(String sketchPath, BackgroundWorker worker)
         {
             if (sketchPath.Equals("")) { return; }
-            this.sketchName = sketchPath.Substring(sketchPath.LastIndexOf('\\') + 1, 5);
+            sketchName = sketchPath.Substring(sketchPath.LastIndexOf('\\') + 1, 5);
             //for out, not important here
-            Rectangle[] faces;
-            Rectangle[] eyes;
-            Rectangle[] mouths;
+            Rectangle[] faces; Rectangle[] eyes; Rectangle[] mouths;
 
             Image<Bgr, byte> sketch = new Image<Bgr, byte>(sketchPath);
 
-            if (db == null)
+            if (descriptors == null)
             {
                 if (File.Exists(DB_NAME))
                 {
                     Stream openFileStream = File.OpenRead(DB_NAME);
                     BinaryFormatter deserializer = new BinaryFormatter();
-                    db = (List<Face>)deserializer.Deserialize(openFileStream);
+                    descriptors = (List<FaceDescriptor>)deserializer.Deserialize(openFileStream);
                     openFileStream.Close();
                 }
                 else
                 {
-                    db = new List<Face>();
+                    descriptors = new List<FaceDescriptor>();
                     DirectoryInfo dinfo = new DirectoryInfo(PHOTO_PATH);
                     FileInfo[] Files = dinfo.GetFiles(PHOTO_EXTENSION);
                     for (int i = 0; i < Files.Length; i++)
                     {
                         Image<Bgr, byte> image = new Image<Bgr, byte>(Files[i].FullName);
-                        Rectangle realFace;
-                        Rectangle[] realEyes;
-                        Rectangle realMouth;
+                        Rectangle realFace; Rectangle[] realEyes; Rectangle realMouth;
                         faceDetection.faceAndLandmarks(image, out realFace, out realEyes, out realMouth, out faces, out eyes, out mouths);
                         var extendedFace = faceDetection.extendFace(image, realFace, faceDetection.faceOutline(image));
                         image = image.GetSubRect(extendedFace);
 
-                        Face face = new Face(image, Files[i].Name);
+                        FaceDescriptor face = new FaceDescriptor(Files[i].Name);
 
                         realMouth.X += realFace.X - extendedFace.X;
                         realMouth.Y += realFace.Y - extendedFace.Y;
 
-                        face.mouth = realMouth;
-
-                        Point leftEye = new Point();
-                        Point rightEye = new Point();
+                        Point leftEye = new Point(); Point rightEye = new Point();
                         if (realEyes.Length == 2)
                         {
                             faceDetection.getEyesCenter(realEyes, out leftEye, out rightEye);
@@ -85,59 +78,79 @@ namespace CompositeSketchRecognition
                             Point rotatedLeftEye;
                             Point rotatedRightEye;
                             image = faceDetection.alignEyes(image, leftEye, rightEye, out rotatedLeftEye, out rotatedRightEye);
-                            face.leftEye = rotatedLeftEye;
-                            face.rightEye = rotatedRightEye;
+                            leftEye = rotatedLeftEye;
+                            rightEye = rotatedRightEye;
+                            realMouth = faceDetection.getMouth(
+                                image.GetSubRect(
+                                new Rectangle(new Point(0, 0), new Size((int)(image.Width * 0.9), (int)(image.Height * 0.9)))
+                            ));
                         }
-                        db.Add(face);
+
+                        //Console.WriteLine(face.Name);
+
+                        Rectangle hair; Rectangle brow; Rectangle roiEyes; Rectangle nose;
+                        faceDetection.getFaceROI(image, leftEye, rightEye, realMouth, out hair, out brow, out roiEyes, out nose);
+                        Image<Bgr, byte> hairImage; Image<Bgr, byte> browImage; Image<Bgr, byte> eyesImage; Image<Bgr, byte> noseImage; Image<Bgr, byte> mouthImge;
+                        roiToFixedImage(image, hair, brow, roiEyes, nose, realMouth,
+                            out hairImage, out browImage, out eyesImage, out noseImage, out mouthImge);
+                        face.Hair = hogDescriptor.GetHog(hairImage);
+                        face.Brow = hogDescriptor.GetHog(browImage);
+                        face.Eyes = hogDescriptor.GetHog(eyesImage);
+                        face.Nose = hogDescriptor.GetHog(noseImage);
+                        face.Mouth = hogDescriptor.GetHog(mouthImge);
+                        face.processDescriptor();
+
+                        descriptors.Add(face);
 
                         worker.ReportProgress(i * 100 / Files.Length);
                     }
 
                     Stream SaveFileStream = File.Create(DB_NAME);
                     BinaryFormatter serializer = new BinaryFormatter();
-                    serializer.Serialize(SaveFileStream, db);
+                    serializer.Serialize(SaveFileStream, descriptors);
                     SaveFileStream.Close();
                 }
             }
 
             worker.ReportProgress(0);
+            Console.WriteLine("Db lenght" + descriptors.Count);
 
-            Rectangle sketchRealFace;
-            Rectangle[] sketchRealEyes;
-            Rectangle sketchRealMouth;
+            Rectangle sketchRealFace; Rectangle[] sketchRealEyes; Rectangle sketchRealMouth;
             faceDetection.faceAndLandmarks(sketch, out sketchRealFace, out sketchRealEyes, out sketchRealMouth, out faces, out eyes, out mouths);
             var extendedSketchface = faceDetection.extendFace(sketch, sketchRealFace, faceDetection.faceOutline(sketch));
             sketch = sketch.GetSubRect(extendedSketchface);
 
-            var sketchHog = hogDescriptor.GetHog(processForHOG(sketch, true).Resize(HOG_WIDTH, HOG_HEIGHT, Inter.Linear));
+            sketchRealMouth.X += sketchRealFace.X - extendedSketchface.X;
+            sketchRealMouth.Y += sketchRealFace.Y - extendedSketchface.Y;
 
-            Console.WriteLine("Db lenght" + db.Count);
+            Point sketchLeftEye;
+            Point sketchRightEye;
+            faceDetection.getEyesCenter(sketchRealEyes, out sketchLeftEye, out sketchRightEye);
+            sketchLeftEye.X += sketchRealFace.X - extendedSketchface.X;
+            sketchLeftEye.Y += sketchRealFace.Y - extendedSketchface.Y;
+            sketchRightEye.X += sketchRealFace.X - extendedSketchface.X;
+            sketchRightEye.Y += sketchRealFace.Y - extendedSketchface.Y;
+
+            FaceDescriptor sketchFace = new FaceDescriptor(sketchName);
+
+            Rectangle sketchHair; Rectangle sketchBrow; Rectangle sketchRoiEyes; Rectangle sketchNose;
+            faceDetection.getFaceROI(sketch, sketchLeftEye, sketchRightEye, sketchRealMouth, out sketchHair, out sketchBrow, out sketchRoiEyes, out sketchNose);
+            Image<Bgr, byte> sketchHairImage; Image<Bgr, byte> sketchBrowImage; Image<Bgr, byte> sketchEyesImage; Image<Bgr, byte> sketchNoseImage; Image<Bgr, byte> sketchMouthImage;
+            roiToFixedImage(sketch, sketchHair, sketchBrow, sketchRoiEyes, sketchNose, sketchRealMouth,
+                out sketchHairImage, out sketchBrowImage, out sketchEyesImage, out sketchNoseImage, out sketchMouthImage);
+            sketchFace.Hair = hogDescriptor.GetHog(sketchHairImage);
+            sketchFace.Brow = hogDescriptor.GetHog(sketchBrowImage);
+            sketchFace.Eyes = hogDescriptor.GetHog(sketchEyesImage);
+            sketchFace.Nose = hogDescriptor.GetHog(sketchNoseImage);
+            sketchFace.Mouth = hogDescriptor.GetHog(sketchMouthImage);
+            sketchFace.processDescriptor();
 
             result = new SortedDictionary<double, string>();
 
-            for (int i = 0; i < db.Count; i++)
+            for (int i = 0; i < descriptors.Count; i++)
             {
-                var faceImage = db[i].image;
-                if (db[i].leftEye != null && db[i].rightEye != null
-                    && !db[i].leftEye.Equals(new Point()) && !db[i].rightEye.Equals(new Point())
-                    && sketchRealEyes.Length == 2)
-                {
-                    Point sketchLeftEye;
-                    Point sketchRightEye;
-                    faceDetection.getEyesCenter(sketchRealEyes, out sketchLeftEye, out sketchRightEye);
-                    sketchLeftEye.X += sketchRealFace.X - extendedSketchface.X;
-                    sketchLeftEye.Y += sketchRealFace.Y - extendedSketchface.Y;
-                    sketchRightEye.X += sketchRealFace.X - extendedSketchface.X;
-                    sketchRightEye.Y += sketchRealFace.Y - extendedSketchface.Y;
-
-                    faceImage = faceDetection.alignFaces(db[i].image, sketch, db[i].leftEye, db[i].rightEye, sketchLeftEye, sketchRightEye);
-                }
-                
-                var faceHog = hogDescriptor.GetHog(processForHOG(faceImage, false).Resize(HOG_WIDTH, HOG_HEIGHT, Inter.Linear));
-
-                result.Add(euclideanDistance(sketchHog, faceHog), db[i].name);
-
-                worker.ReportProgress(i * 100 / db.Count);
+                result.Add(euclideanDistance(sketchFace.Descriptor, descriptors[i].Descriptor), descriptors[i].Name);
+                worker.ReportProgress(i * 100 / descriptors.Count);
             }
 
             worker.ReportProgress(100);
@@ -161,7 +174,7 @@ namespace CompositeSketchRecognition
         public int getSubjectIndex()
         {
             int index = -1;
-            int count = 0;
+            int count = 1;
             foreach (var r in result)
             {
                 if (r.Value.StartsWith(sketchName))
@@ -214,7 +227,15 @@ namespace CompositeSketchRecognition
             return gradientMagnitude.Convert<Gray, byte>();
         }
 
-
+        void roiToFixedImage(Image<Bgr, Byte> face, Rectangle hairRoi, Rectangle browRoi, Rectangle eyesRoi, Rectangle noseRoi, Rectangle mouthRoi,
+            out Image<Bgr, byte> hair, out Image<Bgr, byte> brow, out Image<Bgr, byte> eyes, out Image<Bgr, byte> nose, out Image<Bgr, byte> mouth)
+        {
+            hair = face.GetSubRect(hairRoi).Resize(176, 48, Inter.Linear);
+            brow = face.GetSubRect(browRoi).Resize(128, 16, Inter.Linear);
+            eyes = face.GetSubRect(eyesRoi).Resize(112, 16, Inter.Linear);
+            nose = face.GetSubRect(noseRoi).Resize(64, 80, Inter.Linear);
+            mouth = face.GetSubRect(mouthRoi).Resize(48, 32, Inter.Linear);
+        }
 
         public Image<Bgr, byte> getStepImage(String imagePath, int index, String sketchPath, bool inverted)
         {
@@ -230,12 +251,8 @@ namespace CompositeSketchRecognition
                 return new Image<Bgr, byte>(imagePath);
             }
 
-            Rectangle realFace;
-            Rectangle[] realEyes;
-            Rectangle realMouth;
-            Rectangle[] faces;
-            Rectangle[] eyes;
-            Rectangle[] mouths;
+            Rectangle realFace; Rectangle[] realEyes; Rectangle realMouth;
+            Rectangle[] faces; Rectangle[] eyes; Rectangle[] mouths;
             faceDetection.faceAndLandmarks(image, out realFace, out realEyes, out realMouth, out faces, out eyes, out mouths);
 
             if (index == 1 || index == 2 || index == 4)
@@ -281,12 +298,91 @@ namespace CompositeSketchRecognition
                 return faceDetection.faceOutline(image).Convert<Bgr, byte>();
             }
 
+            var extendedFace = faceDetection.extendFace(image, realFace, faceDetection.faceOutline(image));
+            var cutFace = image.GetSubRect(extendedFace);
 
+            realMouth.X += realFace.X - extendedFace.X;
+            realMouth.Y += realFace.Y - extendedFace.Y;
 
+            Point leftEye = new Point();
+            Point rightEye = new Point();
 
+            if (realEyes.Length == 2)
+            {
+                faceDetection.getEyesCenter(realEyes, out leftEye, out rightEye);
+                leftEye.X += realFace.X - extendedFace.X;
+                leftEye.Y += realFace.Y - extendedFace.Y;
+                rightEye.X += realFace.X - extendedFace.X;
+                rightEye.Y += realFace.Y - extendedFace.Y;
+            }
 
+            if (!inverted)
+            {
+                if (realEyes.Length == 2)
+                {
+                    Point rotatedLeftEye;
+                    Point rotatedRightEye;
+                    cutFace = faceDetection.alignEyes(cutFace, leftEye, rightEye, out rotatedLeftEye, out rotatedRightEye);
+                    leftEye = rotatedLeftEye;
+                    rightEye = rotatedRightEye;
 
-            if (sketchPath != null)
+                    if (index == 5)
+                    {
+                        CvInvoke.Circle(cutFace, leftEye, 2, new MCvScalar(255, 255, 255));
+                        CvInvoke.Circle(cutFace, rightEye, 2, new MCvScalar(255, 255, 255));
+                        return cutFace;
+                    }
+
+                    realMouth = faceDetection.getMouth(
+                        cutFace.GetSubRect(
+                            new Rectangle(new Point(0, 0), new Size((int)(cutFace.Width * 0.9), (int)(cutFace.Height * 0.9)))
+                        ));
+                }
+            }
+            if (index == 5)
+            {
+                return cutFace;
+            }
+
+            Rectangle hair; Rectangle brow; Rectangle roiEyes; Rectangle nose;
+            faceDetection.getFaceROI(cutFace, leftEye, rightEye, realMouth, out hair, out brow, out roiEyes, out nose);
+
+            if (index == 6)
+            {
+                cutFace.Draw(hair, new Bgr(Color.Yellow), 3);
+                cutFace.Draw(brow, new Bgr(Color.Violet), 3);
+                cutFace.Draw(roiEyes, new Bgr(Color.DarkMagenta), 3);
+                cutFace.Draw(nose, new Bgr(Color.DarkBlue), 3);
+                cutFace.Draw(realMouth, new Bgr(Color.DarkGreen), 3);
+                return cutFace;
+            }
+
+            Image<Bgr, byte> hairImage; Image<Bgr, byte> browImage; Image<Bgr, byte> eyesImage; Image<Bgr, byte> noseImage; Image<Bgr, byte> mouthImge;
+            roiToFixedImage(cutFace, hair, brow, roiEyes, nose, realMouth,
+                out hairImage, out browImage, out eyesImage, out noseImage, out mouthImge);
+
+            if (index == 7)
+            {
+                return hogDescriptor.hogVisualization(hairImage, hogDescriptor.GetHog(hairImage));
+            }
+            if (index == 8)
+            {
+                return hogDescriptor.hogVisualization(browImage, hogDescriptor.GetHog(browImage));
+            }
+            if (index == 9)
+            {
+                return hogDescriptor.hogVisualization(eyesImage, hogDescriptor.GetHog(eyesImage));
+            }
+            if (index == 10)
+            {
+                return hogDescriptor.hogVisualization(noseImage, hogDescriptor.GetHog(noseImage));
+            }
+            if (index == 11)
+            {
+                return hogDescriptor.hogVisualization(mouthImge, hogDescriptor.GetHog(mouthImge));
+            }
+
+            /*if (sketchPath != null)
             {
                 if (inverted)
                 {
@@ -387,7 +483,7 @@ namespace CompositeSketchRecognition
                     Image<Gray, Byte> imageOfInterest = processForHOG(sketchCutFace, true).Resize(HOG_WIDTH, HOG_HEIGHT, Inter.Linear);
                     return hogDescriptor.hogVisualization(imageOfInterest, hogDescriptor.GetHog(imageOfInterest));
                 }
-            }
+            }*/
 
 
 

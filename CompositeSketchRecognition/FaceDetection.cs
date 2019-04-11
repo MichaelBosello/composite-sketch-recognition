@@ -50,7 +50,7 @@ namespace CompositeSketchRecognition
             var grayCutFace = grayImage.GetSubRect(realFace);
 
             eyes = haarEye.DetectMultiScale(cutFace,
-                1.01, 15);
+                1.01, 15, maxSize: new Size(grayCutFace.Width / 4, grayCutFace.Height / 4));
             var realEyesList = eyes.ToList();
             foreach (var eye in eyes)
             {
@@ -95,13 +95,14 @@ namespace CompositeSketchRecognition
             var grayImage = image.Convert<Gray, Byte>();
 
             var mouths = haarMouth.DetectMultiScale(grayImage,
-                1.01, 15, new Size(grayImage.Width / 8, grayImage.Height / 8));
+                1.01, 15, new Size(grayImage.Width / 10, grayImage.Height / 12)
+                );
             if (mouths.Length > 0)
             {
                 mouth = mouths.First();
                 foreach (var m in mouths)
                 {
-                    if (m.Y + m.Height > mouth.Y + mouth.Height)
+                    if (m.Y > mouth.Y)
                     {
                         mouth = m;
                     }
@@ -214,7 +215,8 @@ namespace CompositeSketchRecognition
             rightEye.Y += deltaY / 2;
             rotatedLeftEye = leftEye;
             rotatedRightEye = rightEye;
-            return face.Rotate(degrees, new Bgr(255, 255, 255));
+
+            return face.Rotate(degrees, face[0, 0]);
         }
 
         public Image<Bgr, byte> alignFaces(Image<Bgr, byte> cutFace, Image<Bgr, byte> sketchCutFace,
@@ -258,6 +260,66 @@ namespace CompositeSketchRecognition
                 py++;
             }
             return cutFaceResized;
+        }
+
+        public void getFaceROI(Image<Bgr, byte> face, Point leftEye, Point rightEye, Rectangle mouth, out Rectangle hair, out Rectangle brow, out Rectangle eyes, out Rectangle nose)
+        {
+            if (leftEye.Equals(new Point()))
+            {
+                leftEye.Y = (int)(face.Height * 0.5);
+                rightEye.Y = (int)(face.Height * 0.5);
+                leftEye.X = (int)(face.Width * 0.32);
+                rightEye.X = face.Width - leftEye.X;
+            }
+
+            eyes = new Rectangle();
+
+            eyes.Width = rightEye.X - leftEye.X;
+            double padding = eyes.Width * 0.3;
+            eyes.X = (int)(leftEye.X - padding);
+            eyes.Width = (int)(eyes.Width + 2 * padding);
+
+            double eyesHeight = eyes.Width * 0.2;
+            eyes.Y = (int)(leftEye.Y - eyesHeight / 2);
+            eyes.Height = (int)eyesHeight;
+
+            brow = new Rectangle();
+            double browPadding = eyes.X / 3;
+            brow.X = (int)(eyes.X - browPadding);
+            brow.Width = (int)(eyes.Width + (browPadding * 2));
+            brow.Height = (int)(eyes.Height * 0.8);
+            brow.Y = eyes.Y - brow.Height;
+
+            hair = new Rectangle();
+            hair.X = 0;
+            hair.Y = 0;
+            hair.Width = face.Width;
+            hair.Height = brow.Y;
+
+            
+            nose = new Rectangle();
+            nose.Width = (int)(mouth.Width * 0.8);
+            nose.X = mouth.X + (mouth.Width - nose.Width) / 2;
+            nose.Y = eyes.Bottom;
+            nose.Height = mouth.Y - eyes.Bottom;
+
+
+            if (eyes.Right > face.Width)
+            {
+                eyes.Width = face.Width - eyes.X;
+            }
+            if (brow.Right > face.Width)
+            {
+                brow.Width = face.Width - brow.X;
+            }
+            if (eyes.X < 0)
+            {
+                eyes.X = 0;
+            }
+            if (brow.X < 0)
+            {
+                brow.X = 0;
+            }
         }
     }
 }

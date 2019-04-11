@@ -147,7 +147,7 @@ namespace CompositeSketchRecognition
 
         private void showImages()
         {
-            labelIndex.Text = currentIndex.ToString();
+            labelIndex.Text = (currentIndex + 1).ToString();
             imageBox1.Image = imageRetreivalSystem.getImage(currentIndex);
             imageBox2.Image = imageRetreivalSystem.getImage(currentIndex + 1);
             imageBox3.Image = imageRetreivalSystem.getImage(currentIndex + 2);
@@ -204,7 +204,7 @@ namespace CompositeSketchRecognition
 
         private void buttonStepNext_Click(object sender, EventArgs e)
         {
-            if (currentStep < 9)
+            if (currentStep < 11)
             {
                 currentStep++;
                 labelStep.Text = currentStep.ToString();
