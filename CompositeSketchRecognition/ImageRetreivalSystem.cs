@@ -15,6 +15,7 @@ namespace CompositeSketchRecognition
         public const string PHOTO_PATH = @"..\..\..\database\UoM-SGFS-v2\Photos\Images\";
         public const string SKETCH_PATH = @"..\..\..\database\UoM-SGFS-v2\Sketches\Set A\Images\";
         public const string PHOTO_EXTENSION = "*.ppm";
+        public const string SKETCH_EXTENSION = "*.bmp";
 
         public const string DB_NAME = "descriptors.bin";
 
@@ -31,7 +32,61 @@ namespace CompositeSketchRecognition
             new SortedDictionary<double, string>();
         String sketchName = "";
 
+        public void test(BackgroundWorker worker, out double rank1, out double rank10, out double rank50, out double rank100, out double rank200)
+        {
+            rank1 = 0;
+            rank10 = 0;
+            rank50 = 0;
+            rank100 = 0;
+            rank200 = 0;
+            DirectoryInfo dinfo = new DirectoryInfo(SKETCH_PATH);
+            FileInfo[] sketches = dinfo.GetFiles(SKETCH_EXTENSION);
+            for (int i = 0; i < sketches.Length; i++)
+            {
+                search(sketches[i].FullName);
+                var index = getSubjectIndex();
+                if (index == 1)
+                {
+                    rank1++;
+                }
+                if (index <= 10)
+                {
+                    rank10++;
+                }
+                if (index <= 50)
+                {
+                    rank50++;
+                }
+                if (index <= 100)
+                {
+                    rank100++;
+                }
+                if (index <= 200)
+                {
+                    rank200++;
+                }
+                worker.ReportProgress(i * 100 / sketches.Length);
+            }
+
+            rank1 /= sketches.Length;
+            rank10 /= sketches.Length;
+            rank50 /= sketches.Length;
+            rank100 /= sketches.Length;
+            rank200 /= sketches.Length;
+            worker.ReportProgress(100);
+        }
+
+        public void search(String sketchPath)
+        {
+            search(sketchPath, null, false);
+        }
+
         public void search(String sketchPath, BackgroundWorker worker)
+        {
+            search(sketchPath, worker, true);
+        }
+
+        private void search(String sketchPath, BackgroundWorker worker, bool progress)
         {
             if (sketchPath.Equals("")) { return; }
             sketchName = sketchPath.Substring(sketchPath.LastIndexOf('\\') + 1, 5);
@@ -102,7 +157,8 @@ namespace CompositeSketchRecognition
 
                         descriptors.Add(face);
 
-                        worker.ReportProgress(i * 100 / Files.Length);
+                        if(progress)
+                            worker.ReportProgress(i * 100 / Files.Length);
                     }
 
                     Stream SaveFileStream = File.Create(DB_NAME);
@@ -112,7 +168,8 @@ namespace CompositeSketchRecognition
                 }
             }
 
-            worker.ReportProgress(0);
+            if (progress)
+                worker.ReportProgress(0);
             Console.WriteLine("Db lenght" + descriptors.Count);
 
             Rectangle sketchRealFace; Rectangle[] sketchRealEyes; Rectangle sketchRealMouth;
@@ -123,13 +180,16 @@ namespace CompositeSketchRecognition
             sketchRealMouth.X += sketchRealFace.X - extendedSketchface.X;
             sketchRealMouth.Y += sketchRealFace.Y - extendedSketchface.Y;
 
-            Point sketchLeftEye;
-            Point sketchRightEye;
-            faceDetection.getEyesCenter(sketchRealEyes, out sketchLeftEye, out sketchRightEye);
-            sketchLeftEye.X += sketchRealFace.X - extendedSketchface.X;
-            sketchLeftEye.Y += sketchRealFace.Y - extendedSketchface.Y;
-            sketchRightEye.X += sketchRealFace.X - extendedSketchface.X;
-            sketchRightEye.Y += sketchRealFace.Y - extendedSketchface.Y;
+            Point sketchLeftEye = new Point();
+            Point sketchRightEye = new Point();
+            if (sketchRealEyes.Length == 2)
+            {
+                faceDetection.getEyesCenter(sketchRealEyes, out sketchLeftEye, out sketchRightEye);
+                sketchLeftEye.X += sketchRealFace.X - extendedSketchface.X;
+                sketchLeftEye.Y += sketchRealFace.Y - extendedSketchface.Y;
+                sketchRightEye.X += sketchRealFace.X - extendedSketchface.X;
+                sketchRightEye.Y += sketchRealFace.Y - extendedSketchface.Y;
+            }
 
             FaceDescriptor sketchFace = new FaceDescriptor(sketchName);
 
@@ -150,10 +210,12 @@ namespace CompositeSketchRecognition
             for (int i = 0; i < descriptors.Count; i++)
             {
                 result.Add(euclideanDistance(sketchFace.Descriptor, descriptors[i].Descriptor), descriptors[i].Name);
-                worker.ReportProgress(i * 100 / descriptors.Count);
+                if (progress)
+                    worker.ReportProgress(i * 100 / descriptors.Count);
             }
 
-            worker.ReportProgress(100);
+            if (progress)
+                worker.ReportProgress(100);
         }
 
         public Image<Bgr, byte> getImage(int index)

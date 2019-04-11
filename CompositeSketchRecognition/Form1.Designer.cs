@@ -52,6 +52,7 @@
             this.panel1 = new System.Windows.Forms.Panel();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
+            this.progressBar = new System.Windows.Forms.ProgressBar();
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.buttonStepNext = new System.Windows.Forms.Button();
             this.buttonStepPre = new System.Windows.Forms.Button();
@@ -59,7 +60,20 @@
             this.imageBoxStep = new Emgu.CV.UI.ImageBox();
             this.listBox2 = new System.Windows.Forms.ListBox();
             this.listBox1 = new System.Windows.Forms.ListBox();
-            this.progressBar = new System.Windows.Forms.ProgressBar();
+            this.tabPage3 = new System.Windows.Forms.TabPage();
+            this.label1 = new System.Windows.Forms.Label();
+            this.label2 = new System.Windows.Forms.Label();
+            this.label3 = new System.Windows.Forms.Label();
+            this.label4 = new System.Windows.Forms.Label();
+            this.label5 = new System.Windows.Forms.Label();
+            this.rank200label = new System.Windows.Forms.Label();
+            this.rank100label = new System.Windows.Forms.Label();
+            this.rank50label = new System.Windows.Forms.Label();
+            this.rank10label = new System.Windows.Forms.Label();
+            this.rank1label = new System.Windows.Forms.Label();
+            this.buttonAccuracyTest = new System.Windows.Forms.Button();
+            this.progressBarAccuracy = new System.Windows.Forms.ProgressBar();
+            this.backgroundWorkerAccuracy = new System.ComponentModel.BackgroundWorker();
             ((System.ComponentModel.ISupportInitialize)(this.sketch)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox2)).BeginInit();
@@ -76,6 +90,7 @@
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.imageBoxStep)).BeginInit();
+            this.tabPage3.SuspendLayout();
             this.SuspendLayout();
             // 
             // buttonQuery
@@ -346,6 +361,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tabControl1.Controls.Add(this.tabPage1);
             this.tabControl1.Controls.Add(this.tabPage2);
+            this.tabControl1.Controls.Add(this.tabPage3);
             this.tabControl1.Location = new System.Drawing.Point(-3, 2);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
@@ -366,6 +382,14 @@
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "Query";
             this.tabPage1.UseVisualStyleBackColor = true;
+            // 
+            // progressBar
+            // 
+            this.progressBar.Location = new System.Drawing.Point(12, 825);
+            this.progressBar.Name = "progressBar";
+            this.progressBar.Size = new System.Drawing.Size(351, 23);
+            this.progressBar.Step = 1;
+            this.progressBar.TabIndex = 24;
             // 
             // tabPage2
             // 
@@ -447,13 +471,143 @@
             this.listBox1.TabIndex = 0;
             this.listBox1.SelectedIndexChanged += new System.EventHandler(this.listBox1_SelectedIndexChanged);
             // 
-            // progressBar
+            // tabPage3
             // 
-            this.progressBar.Location = new System.Drawing.Point(12, 825);
-            this.progressBar.Name = "progressBar";
-            this.progressBar.Size = new System.Drawing.Size(351, 23);
-            this.progressBar.Step = 1;
-            this.progressBar.TabIndex = 24;
+            this.tabPage3.Controls.Add(this.progressBarAccuracy);
+            this.tabPage3.Controls.Add(this.buttonAccuracyTest);
+            this.tabPage3.Controls.Add(this.rank200label);
+            this.tabPage3.Controls.Add(this.rank100label);
+            this.tabPage3.Controls.Add(this.rank50label);
+            this.tabPage3.Controls.Add(this.rank10label);
+            this.tabPage3.Controls.Add(this.rank1label);
+            this.tabPage3.Controls.Add(this.label5);
+            this.tabPage3.Controls.Add(this.label4);
+            this.tabPage3.Controls.Add(this.label3);
+            this.tabPage3.Controls.Add(this.label2);
+            this.tabPage3.Controls.Add(this.label1);
+            this.tabPage3.Location = new System.Drawing.Point(4, 22);
+            this.tabPage3.Name = "tabPage3";
+            this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage3.Size = new System.Drawing.Size(1203, 990);
+            this.tabPage3.TabIndex = 2;
+            this.tabPage3.Text = "Accuracy test";
+            this.tabPage3.UseVisualStyleBackColor = true;
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(187, 140);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(89, 13);
+            this.label1.TabIndex = 0;
+            this.label1.Text = "Rank 1 accuracy";
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(187, 179);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(95, 13);
+            this.label2.TabIndex = 1;
+            this.label2.Text = "Rank 10 accuracy";
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(187, 218);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(95, 13);
+            this.label3.TabIndex = 2;
+            this.label3.Text = "Rank 50 accuracy";
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(187, 256);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(101, 13);
+            this.label4.TabIndex = 3;
+            this.label4.Text = "Rank 100 accuracy";
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(187, 290);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(101, 13);
+            this.label5.TabIndex = 4;
+            this.label5.Text = "Rank 200 accuracy";
+            // 
+            // rank200label
+            // 
+            this.rank200label.AutoSize = true;
+            this.rank200label.Location = new System.Drawing.Point(311, 290);
+            this.rank200label.Name = "rank200label";
+            this.rank200label.Size = new System.Drawing.Size(10, 13);
+            this.rank200label.TabIndex = 9;
+            this.rank200label.Text = "-";
+            // 
+            // rank100label
+            // 
+            this.rank100label.AutoSize = true;
+            this.rank100label.Location = new System.Drawing.Point(311, 256);
+            this.rank100label.Name = "rank100label";
+            this.rank100label.Size = new System.Drawing.Size(10, 13);
+            this.rank100label.TabIndex = 8;
+            this.rank100label.Text = "-";
+            // 
+            // rank50label
+            // 
+            this.rank50label.AutoSize = true;
+            this.rank50label.Location = new System.Drawing.Point(311, 218);
+            this.rank50label.Name = "rank50label";
+            this.rank50label.Size = new System.Drawing.Size(10, 13);
+            this.rank50label.TabIndex = 7;
+            this.rank50label.Text = "-";
+            // 
+            // rank10label
+            // 
+            this.rank10label.AutoSize = true;
+            this.rank10label.Location = new System.Drawing.Point(311, 179);
+            this.rank10label.Name = "rank10label";
+            this.rank10label.Size = new System.Drawing.Size(10, 13);
+            this.rank10label.TabIndex = 6;
+            this.rank10label.Text = "-";
+            // 
+            // rank1label
+            // 
+            this.rank1label.AutoSize = true;
+            this.rank1label.Location = new System.Drawing.Point(311, 140);
+            this.rank1label.Name = "rank1label";
+            this.rank1label.Size = new System.Drawing.Size(10, 13);
+            this.rank1label.TabIndex = 5;
+            this.rank1label.Text = "-";
+            // 
+            // buttonAccuracyTest
+            // 
+            this.buttonAccuracyTest.Location = new System.Drawing.Point(635, 142);
+            this.buttonAccuracyTest.Name = "buttonAccuracyTest";
+            this.buttonAccuracyTest.Size = new System.Drawing.Size(121, 50);
+            this.buttonAccuracyTest.TabIndex = 10;
+            this.buttonAccuracyTest.Text = "Run Test";
+            this.buttonAccuracyTest.UseVisualStyleBackColor = true;
+            this.buttonAccuracyTest.Click += new System.EventHandler(this.buttonAccuracyTest_Click);
+            // 
+            // progressBarAccuracy
+            // 
+            this.progressBarAccuracy.Location = new System.Drawing.Point(494, 218);
+            this.progressBarAccuracy.Name = "progressBarAccuracy";
+            this.progressBarAccuracy.Size = new System.Drawing.Size(394, 23);
+            this.progressBarAccuracy.Step = 1;
+            this.progressBarAccuracy.TabIndex = 11;
+            // 
+            // backgroundWorkerAccuracy
+            // 
+            this.backgroundWorkerAccuracy.WorkerReportsProgress = true;
+            this.backgroundWorkerAccuracy.WorkerSupportsCancellation = true;
+            this.backgroundWorkerAccuracy.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorkerAccuracy_DoWork);
+            this.backgroundWorkerAccuracy.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorkerAccuracy_ProgressChanged);
+            this.backgroundWorkerAccuracy.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorkerAccuracy_RunWorkerCompleted);
             // 
             // Form1
             // 
@@ -481,6 +635,8 @@
             this.tabPage2.ResumeLayout(false);
             this.tabPage2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.imageBoxStep)).EndInit();
+            this.tabPage3.ResumeLayout(false);
+            this.tabPage3.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -518,6 +674,20 @@
         private System.Windows.Forms.ListBox listBox1;
         private System.Windows.Forms.Button buttonStepNext;
         private System.Windows.Forms.ProgressBar progressBar;
+        private System.Windows.Forms.TabPage tabPage3;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.ProgressBar progressBarAccuracy;
+        private System.Windows.Forms.Button buttonAccuracyTest;
+        private System.Windows.Forms.Label rank200label;
+        private System.Windows.Forms.Label rank100label;
+        private System.Windows.Forms.Label rank50label;
+        private System.Windows.Forms.Label rank10label;
+        private System.Windows.Forms.Label rank1label;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Label label2;
+        private System.ComponentModel.BackgroundWorker backgroundWorkerAccuracy;
     }
 }
 

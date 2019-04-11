@@ -211,5 +211,44 @@ namespace CompositeSketchRecognition
                 imageBoxStep.Image = imageRetreivalSystem.getStepImage(currentStepImage, currentStep, otherImage, inverted);
             }
         }
+
+
+
+
+
+        private void buttonAccuracyTest_Click(object sender, EventArgs e)
+        {
+            if (!backgroundWorkerAccuracy.IsBusy)
+            {
+                backgroundWorkerAccuracy.RunWorkerAsync();
+                buttonQuery.Text = "Stop";
+            }
+            else
+            {
+                backgroundWorkerAccuracy.CancelAsync();
+                buttonQuery.Text = "Query";
+            }
+        }
+
+        double rank1 = 0, rank10 = 0, rank50 = 0, rank100 = 0, rank200 = 0;
+        private void backgroundWorkerAccuracy_DoWork(object sender, DoWorkEventArgs e)
+        {
+            var backgroundWorkerAccuracy = sender as BackgroundWorker;
+            imageRetreivalSystem.test(backgroundWorkerAccuracy, out rank1, out rank10, out rank50, out rank100, out rank200);
+        }
+
+        private void backgroundWorkerAccuracy_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            progressBarAccuracy.Value = e.ProgressPercentage;
+        }
+
+        private void backgroundWorkerAccuracy_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            rank1label.Text = rank1.ToString();
+            rank10label.Text = rank10.ToString();
+            rank50label.Text = rank50.ToString();
+            rank100label.Text = rank100.ToString();
+            rank200label.Text = rank200.ToString();
+        }
     }
 }

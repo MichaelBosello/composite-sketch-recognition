@@ -312,6 +312,50 @@ namespace CompositeSketchRecognition
             {
                 brow.Width = face.Width - brow.X;
             }
+            if (nose.Right > face.Width)
+            {
+                nose.Width = face.Width - nose.X;
+            }
+
+            if (eyes.Bottom > face.Height)
+            {
+                eyes.Height = face.Height - eyes.Y;
+            }
+            if (brow.Bottom > face.Height)
+            {
+                brow.Height = face.Height - brow.Y;
+            }
+            if (nose.Bottom > face.Height)
+            {
+                nose.Height = face.Height - nose.Y;
+            }
+
+            if (eyes.Width <= 0)
+            {
+                eyes.Width = 1;
+            }
+            if (brow.Width <= 0)
+            {
+                brow.Width = 1;
+            }
+            if (nose.Width <= 0)
+            {
+                nose.Width = 1;
+            }
+
+            if (eyes.Height <= 0)
+            {
+                eyes.Height = 1;
+            }
+            if (brow.Height <= 0)
+            {
+                brow.Height = 1;
+            }
+            if (nose.Height <= 0)
+            {
+                nose.Height = 1;
+            }
+
             if (eyes.X < 0)
             {
                 eyes.X = 0;
@@ -319,6 +363,23 @@ namespace CompositeSketchRecognition
             if (brow.X < 0)
             {
                 brow.X = 0;
+            }
+            if (nose.X < 0)
+            {
+                nose.X = 0;
+            }
+
+            if (eyes.Y < 0)
+            {
+                eyes.Y = 0;
+            }
+            if (brow.Y < 0)
+            {
+                brow.Y = 0;
+            }
+            if (nose.Y < 0)
+            {
+                nose.Y = 0;
             }
         }
     }
