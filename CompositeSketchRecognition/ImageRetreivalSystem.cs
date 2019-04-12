@@ -144,7 +144,7 @@ namespace CompositeSketchRecognition
                         //Console.WriteLine(face.Name);
 
                         Rectangle hair; Rectangle brow; Rectangle roiEyes; Rectangle nose;
-                        faceDetection.getFaceROI(image, leftEye, rightEye, realMouth, out hair, out brow, out roiEyes, out nose);
+                        faceDetection.getFaceROI(image, leftEye, rightEye, realMouth, out hair, out brow, out roiEyes, out nose, out realMouth);
                         Image<Bgr, byte> hairImage; Image<Bgr, byte> browImage; Image<Bgr, byte> eyesImage; Image<Bgr, byte> noseImage; Image<Bgr, byte> mouthImge;
                         roiToFixedImage(image, hair, brow, roiEyes, nose, realMouth,
                             out hairImage, out browImage, out eyesImage, out noseImage, out mouthImge);
@@ -194,7 +194,7 @@ namespace CompositeSketchRecognition
             FaceDescriptor sketchFace = new FaceDescriptor(sketchName);
 
             Rectangle sketchHair; Rectangle sketchBrow; Rectangle sketchRoiEyes; Rectangle sketchNose;
-            faceDetection.getFaceROI(sketch, sketchLeftEye, sketchRightEye, sketchRealMouth, out sketchHair, out sketchBrow, out sketchRoiEyes, out sketchNose);
+            faceDetection.getFaceROI(sketch, sketchLeftEye, sketchRightEye, sketchRealMouth, out sketchHair, out sketchBrow, out sketchRoiEyes, out sketchNose, out sketchRealMouth);
             Image<Bgr, byte> sketchHairImage; Image<Bgr, byte> sketchBrowImage; Image<Bgr, byte> sketchEyesImage; Image<Bgr, byte> sketchNoseImage; Image<Bgr, byte> sketchMouthImage;
             roiToFixedImage(sketch, sketchHair, sketchBrow, sketchRoiEyes, sketchNose, sketchRealMouth,
                 out sketchHairImage, out sketchBrowImage, out sketchEyesImage, out sketchNoseImage, out sketchMouthImage);
@@ -407,7 +407,7 @@ namespace CompositeSketchRecognition
             }
 
             Rectangle hair; Rectangle brow; Rectangle roiEyes; Rectangle nose;
-            faceDetection.getFaceROI(cutFace, leftEye, rightEye, realMouth, out hair, out brow, out roiEyes, out nose);
+            faceDetection.getFaceROI(cutFace, leftEye, rightEye, realMouth, out hair, out brow, out roiEyes, out nose, out realMouth);
 
             if (index == 6)
             {

@@ -262,8 +262,9 @@ namespace CompositeSketchRecognition
             return cutFaceResized;
         }
 
-        public void getFaceROI(Image<Bgr, byte> face, Point leftEye, Point rightEye, Rectangle mouth, out Rectangle hair, out Rectangle brow, out Rectangle eyes, out Rectangle nose)
+        public void getFaceROI(Image<Bgr, byte> face, Point leftEye, Point rightEye, Rectangle mouthIn, out Rectangle hair, out Rectangle brow, out Rectangle eyes, out Rectangle nose, out Rectangle mouthOut)
         {
+            mouthOut = mouthIn;
             if (leftEye.Equals(new Point()))
             {
                 leftEye.Y = (int)(face.Height * 0.5);
@@ -298,37 +299,13 @@ namespace CompositeSketchRecognition
 
             
             nose = new Rectangle();
-            nose.Width = (int)(mouth.Width * 0.8);
-            nose.X = mouth.X + (mouth.Width - nose.Width) / 2;
+            nose.Width = (int)(mouthIn.Width * 0.8);
+            nose.X = mouthIn.X + (mouthIn.Width - nose.Width) / 2;
             nose.Y = eyes.Bottom;
-            nose.Height = mouth.Y - eyes.Bottom;
+            nose.Height = mouthIn.Y - eyes.Bottom;
 
 
-            if (eyes.Right > face.Width)
-            {
-                eyes.Width = face.Width - eyes.X;
-            }
-            if (brow.Right > face.Width)
-            {
-                brow.Width = face.Width - brow.X;
-            }
-            if (nose.Right > face.Width)
-            {
-                nose.Width = face.Width - nose.X;
-            }
 
-            if (eyes.Bottom > face.Height)
-            {
-                eyes.Height = face.Height - eyes.Y;
-            }
-            if (brow.Bottom > face.Height)
-            {
-                brow.Height = face.Height - brow.Y;
-            }
-            if (nose.Bottom > face.Height)
-            {
-                nose.Height = face.Height - nose.Y;
-            }
 
             if (eyes.Width <= 0)
             {
@@ -341,6 +318,10 @@ namespace CompositeSketchRecognition
             if (nose.Width <= 0)
             {
                 nose.Width = 1;
+            }
+            if (mouthOut.Width <= 0)
+            {
+                mouthOut.Width = 1;
             }
 
             if (eyes.Height <= 0)
@@ -355,6 +336,10 @@ namespace CompositeSketchRecognition
             {
                 nose.Height = 1;
             }
+            if (mouthOut.Height <= 0)
+            {
+                mouthOut.Height = 1;
+            }
 
             if (eyes.X < 0)
             {
@@ -368,6 +353,10 @@ namespace CompositeSketchRecognition
             {
                 nose.X = 0;
             }
+            if (mouthOut.X < 0)
+            {
+                mouthOut.X = 0;
+            }
 
             if (eyes.Y < 0)
             {
@@ -380,6 +369,49 @@ namespace CompositeSketchRecognition
             if (nose.Y < 0)
             {
                 nose.Y = 0;
+            }
+            if (mouthOut.Y < 0)
+            {
+                mouthOut.Y = 0;
+            }
+
+
+            if (eyes.Right > face.Width)
+            {
+                eyes.Width = face.Width - eyes.X;
+            }
+            if (brow.Right > face.Width)
+            {
+                brow.Width = face.Width - brow.X;
+            }
+            if (nose.Right > face.Width)
+            {
+                nose.Width = face.Width - nose.X;
+            }
+            if (mouthOut.Right > face.Width)
+            {
+                mouthOut.Width = face.Width - mouthOut.X;
+            }
+
+            if (eyes.Bottom > face.Height)
+            {
+                eyes.Height = face.Height - eyes.Y;
+            }
+            if (brow.Bottom > face.Height)
+            {
+                brow.Height = face.Height - brow.Y;
+            }
+            if (nose.Bottom > face.Height)
+            {
+                nose.Height = face.Height - nose.Y;
+            }
+            if (hair.Height > face.Height)
+            {
+                hair.Height = face.Height;
+            }
+            if (mouthOut.Height > face.Height)
+            {
+                mouthOut.Height = face.Height;
             }
         }
     }
