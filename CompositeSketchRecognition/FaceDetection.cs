@@ -251,6 +251,32 @@ namespace CompositeSketchRecognition
             rotatedLeftEye = leftEye;
             rotatedRightEye = rightEye;
 
+            /*float b = 0, g = 0, r = 0;
+            int count = 0;
+            for (int i = 0; i < 50; i++)
+            {
+                for (int k = 0; k < 50; k++)
+                {
+                    b += face.Data[i, k, 0];
+                    g += face.Data[i, k, 1];
+                    r += face.Data[i, k, 2];
+                    count++;
+                }
+            }
+            for (int i = 0; i < 50; i++)
+            {
+                for (int k = face.Width; k > face.Width - 50; k--)
+                {
+                    b += face.Data[i, k, 0];
+                    g += face.Data[i, k, 1];
+                    r += face.Data[i, k, 2];
+                    count++;
+                }
+            }
+            b /= count;
+            g /= count;
+            r /= count;
+            return face.Rotate(degrees, new Bgr(b, g, r));*/
             return face.Rotate(degrees, face[0, 0]);
         }
 
