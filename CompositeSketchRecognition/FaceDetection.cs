@@ -224,6 +224,15 @@ namespace CompositeSketchRecognition
                 }
             }
 
+            if (extendedFace.Right > image.Width)
+            {
+                extendedFace.Width = image.Width - extendedFace.X;
+            }
+            if (extendedFace.Bottom > image.Height)
+            {
+                extendedFace.Height = image.Height - extendedFace.Y;
+            }
+
             return extendedFace;
         }
 

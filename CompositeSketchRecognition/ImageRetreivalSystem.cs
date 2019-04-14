@@ -17,6 +17,9 @@ namespace CompositeSketchRecognition
         public const string PHOTO_EXTENSION = "*.ppm";
         public const string SKETCH_EXTENSION = "*.bmp";
 
+        public const string OTHER_PHOTO_PATH = @"..\..\..\database\UoM-SGFS-v2\Photos\Others\";
+        public const string OTHER_PHOTO_EXTENSION = "*.jpg";
+
         public const string DB_NAME = "descriptors.bin";
 
         public const int HOG_WIDTH = 144;
@@ -112,17 +115,24 @@ namespace CompositeSketchRecognition
                 else
                 {
                     descriptors = new List<FaceDescriptor>();
+                    List<FileInfo> files = new List<FileInfo>();
+
                     DirectoryInfo dinfo = new DirectoryInfo(PHOTO_PATH);
-                    FileInfo[] Files = dinfo.GetFiles(PHOTO_EXTENSION);
-                    for (int i = 0; i < Files.Length; i++)
+                    files.AddRange(dinfo.GetFiles(PHOTO_EXTENSION));
+                    
+                    dinfo = new DirectoryInfo(OTHER_PHOTO_PATH);
+                    files.AddRange(dinfo.GetFiles(PHOTO_EXTENSION));
+                    files.AddRange(dinfo.GetFiles(OTHER_PHOTO_EXTENSION));
+
+                    for (int i = 0; i < files.Count; i++)
                     {
-                        Image<Bgr, byte> image = new Image<Bgr, byte>(Files[i].FullName);
+                        Image<Bgr, byte> image = new Image<Bgr, byte>(files[i].FullName);
                         Rectangle realFace; Rectangle[] realEyes; Rectangle realMouth;
                         faceDetection.faceAndLandmarks(image, out realFace, out realEyes, out realMouth, out faces, out eyes, out mouths);
                         var extendedFace = faceDetection.extendFace(image, realFace, faceDetection.faceOutline(image));
                         image = image.GetSubRect(extendedFace);
 
-                        FaceDescriptor face = new FaceDescriptor(Files[i].Name);
+                        FaceDescriptor face = new FaceDescriptor(files[i].Name);
 
                         realMouth.X += realFace.X - extendedFace.X;
                         realMouth.Y += realFace.Y - extendedFace.Y;
@@ -163,7 +173,7 @@ namespace CompositeSketchRecognition
                         descriptors.Add(face);
 
                         if(progress)
-                            worker.ReportProgress(i * 100 / Files.Length);
+                            worker.ReportProgress(i * 100 / files.Count);
                     }
 
                     Stream SaveFileStream = File.Create(DB_NAME);

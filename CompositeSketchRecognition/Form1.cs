@@ -19,6 +19,8 @@ namespace CompositeSketchRecognition
         public const string SKETCH_PATH = @"..\..\..\database\UoM-SGFS-v2\Sketches\Set A\Images\";
         public const string PHOTO_EXTENSION = "*.ppm";
         public const string SKETCH_EXTENSION = "*.bmp";
+        public const string OTHER_PHOTO_PATH = @"..\..\..\database\UoM-SGFS-v2\Photos\Others\";
+        public const string OTHER_PHOTO_EXTENSION = "*.jpg";
         public const int RANK = 100;
 
         ImageRetreivalSystem imageRetreivalSystem = new ImageRetreivalSystem();
@@ -32,6 +34,8 @@ namespace CompositeSketchRecognition
         {
             InitializeComponent();
             PopulateListBox(listBox1, PHOTO_PATH, PHOTO_EXTENSION);
+            PopulateListBox(listBox1, OTHER_PHOTO_PATH, PHOTO_EXTENSION);
+            PopulateListBox(listBox1, OTHER_PHOTO_PATH, OTHER_PHOTO_EXTENSION);
             PopulateListBox(listBox2, SKETCH_PATH, SKETCH_EXTENSION);
         }
 
@@ -164,6 +168,14 @@ namespace CompositeSketchRecognition
         private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
             currentStepImage = PHOTO_PATH + listBox1.SelectedItem;
+            if (!File.Exists(currentStepImage))
+            {
+                currentStepImage = OTHER_PHOTO_PATH + listBox1.SelectedItem;
+                if (!File.Exists(currentStepImage))
+                {
+                    currentStepImage = null;
+                }
+            }
 
             if (listBox2.SelectedItem != null)
             {
