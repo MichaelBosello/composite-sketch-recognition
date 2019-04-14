@@ -66,6 +66,11 @@ namespace CompositeSketchRecognition
                     rank200++;
                 }
                 worker.ReportProgress(i * 100 / sketches.Length);
+
+                if (index > 150)
+                {
+                    Console.WriteLine(sketches[i].Name);
+                }
             }
 
             rank1 /= sketches.Length;
@@ -170,7 +175,7 @@ namespace CompositeSketchRecognition
 
             if (progress)
                 worker.ReportProgress(0);
-            Console.WriteLine("Db lenght" + descriptors.Count);
+            //Console.WriteLine("Db lenght" + descriptors.Count);
 
             Rectangle sketchRealFace; Rectangle[] sketchRealEyes; Rectangle sketchRealMouth;
             faceDetection.faceAndLandmarks(sketch, out sketchRealFace, out sketchRealEyes, out sketchRealMouth, out faces, out eyes, out mouths);

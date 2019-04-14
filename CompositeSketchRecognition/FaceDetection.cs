@@ -14,6 +14,7 @@ namespace CompositeSketchRecognition
         CascadeClassifier haarEye = new CascadeClassifier(@"..\..\..\haarcascades\haarcascade_eye.xml");
         CascadeClassifier haarFrontalFace = new CascadeClassifier(@"..\..\..\haarcascades\haarcascade_frontalface_default.xml");
         CascadeClassifier haarMouth = new CascadeClassifier(@"..\..\..\haarcascades\haarcascade_mcs_mouth.xml");
+        CascadeClassifier haarEyeglasses = new CascadeClassifier(@"..\..\..\haarcascades\haarcascade_eye_tree_eyeglasses.xml");
 
         public void faceAndLandmarks(Image<Bgr, byte> image, out Rectangle realFace, out Rectangle[] realEyes, out Rectangle realMouth, out Rectangle[] faces, out Rectangle[] eyes, out Rectangle[] mouths)
         {
@@ -71,6 +72,28 @@ namespace CompositeSketchRecognition
                 }
                 realEyesList.Remove(top);
             }
+
+            if (realEyesList.Count < 2)
+            {
+                eyes = haarEyeglasses.DetectMultiScale(grayCutFace,
+                1.01, 3);
+
+                realEyesList = eyes.ToList();
+                while (realEyesList.Count > 2)
+                {
+                    var top = realEyesList.First();
+                    foreach (var eye in realEyesList)
+                    {
+                        if (eye.Y + eye.Height < top.Y + top.Height)
+                        {
+                            top = eye;
+                        }
+                    }
+                    realEyesList.Remove(top);
+                }
+            }
+            
+
             realEyes = realEyesList.ToArray();
 
             mouths = haarMouth.DetectMultiScale(grayCutFace,
@@ -80,10 +103,18 @@ namespace CompositeSketchRecognition
                 realMouth = mouths.First();
                 foreach (var mouth in mouths)
                 {
+                    if (realMouth.Y < cutFace.Height * 0.5)
+                    {
+                        realMouth = new Rectangle();
+                    }
                     if (mouth.Y + mouth.Height > realMouth.Y + realMouth.Height)
                     {
                         realMouth = mouth;
                     }
+                }
+                if (realMouth.Y < cutFace.Height * 0.5)
+                {
+                    realMouth = new Rectangle();
                 }
 
             }
@@ -106,6 +137,10 @@ namespace CompositeSketchRecognition
                     {
                         mouth = m;
                     }
+                }
+                if (mouth.Y < image.Height * 0.6)
+                {
+                    mouth = new Rectangle();
                 }
             }
 
@@ -273,6 +308,14 @@ namespace CompositeSketchRecognition
                 rightEye.X = face.Width - leftEye.X;
             }
 
+            if (mouthOut.Equals(new Rectangle()))
+            {
+                mouthOut.Y = (int)(face.Height * 0.72);
+                mouthOut.X = (int)(face.Width * 0.33);
+                mouthOut.Height = (int)(face.Height * 0.12);
+                mouthOut.Width = (int)(face.Width * 0.34);
+            }
+
             eyes = new Rectangle();
 
             eyes.Width = rightEye.X - leftEye.X;
@@ -299,10 +342,10 @@ namespace CompositeSketchRecognition
 
             
             nose = new Rectangle();
-            nose.Width = (int)(mouthIn.Width * 0.8);
-            nose.X = mouthIn.X + (mouthIn.Width - nose.Width) / 2;
+            nose.Width = (int)(mouthOut.Width * 0.8);
+            nose.X = mouthOut.X + (mouthOut.Width - nose.Width) / 2;
             nose.Y = eyes.Bottom;
-            nose.Height = mouthIn.Y - eyes.Bottom;
+            nose.Height = mouthOut.Y - eyes.Bottom;
 
 
 
