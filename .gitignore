@@ -4,8 +4,6 @@ database/zip
 **.jpg
 **.png
 
-*.bin
-
 # Created by https://www.gitignore.io/api/macos,linux,windows,visualstudio,visualstudiocode
 # Edit at https://www.gitignore.io/?templates=macos,linux,windows,visualstudio,visualstudiocode
 
