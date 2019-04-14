@@ -1,6 +1,8 @@
 database/zip
 **.ppm
 **.bmp
+**.jpg
+**.png
 
 *.bin
 
