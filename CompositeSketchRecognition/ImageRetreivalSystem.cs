@@ -241,7 +241,16 @@ namespace CompositeSketchRecognition
                 if (count == index)
                 {
                     Console.WriteLine("photo " + index + " distance: " + r.Key);
-                    return new Image<Bgr, byte>(PHOTO_PATH + r.Value);
+                    var path = PHOTO_PATH + r.Value;
+                    if (!File.Exists(path))
+                    {
+                        path = OTHER_PHOTO_PATH + r.Value;
+                        if (!File.Exists(path))
+                        {
+                            return null;
+                        }
+                    }
+                    return new Image<Bgr, byte>(path);
                 }
                 count++;
             }
