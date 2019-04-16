@@ -1,11 +1,5 @@
-﻿using Emgu.CV;
-using Emgu.CV.Structure;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CompositeSketchRecognition
 {
@@ -23,17 +17,17 @@ namespace CompositeSketchRecognition
 
         public FaceDescriptor(string name, float[] hair, float[] brow, float[] eyes,float[] nose, float[] mouth)
         {
-            this.Name = name;
-            this.Hair = hair;
-            this.Brow = brow;
-            this.Eyes = eyes;
-            this.Nose = nose;
-            this.Mouth = mouth;
+            Name = name;
+            Hair = hair;
+            Brow = brow;
+            Eyes = eyes;
+            Nose = nose;
+            Mouth = mouth;
         }
 
         public FaceDescriptor(string name)
         {
-            this.Name = name;
+            Name = name;
         }
 
         public void processDescriptor()

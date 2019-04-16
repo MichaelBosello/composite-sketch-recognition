@@ -3,7 +3,6 @@ using Emgu.CV.Structure;
 using System;
 using System.Linq;
 using System.Drawing;
-using Emgu.CV.CvEnum;
 
 
 namespace CompositeSketchRecognition
@@ -236,7 +235,7 @@ namespace CompositeSketchRecognition
             return extendedFace;
         }
 
-        public void getEyesCenter(Rectangle[] eyes, out Point leftEye, out Point rightEye)
+        public void eyesCenter(Rectangle[] eyes, out Point leftEye, out Point rightEye)
         {
             var lEye = eyes.First();
             var rEye = eyes.Last();
@@ -260,79 +259,10 @@ namespace CompositeSketchRecognition
             rotatedLeftEye = leftEye;
             rotatedRightEye = rightEye;
 
-            /*float b = 0, g = 0, r = 0;
-            int count = 0;
-            for (int i = 0; i < 50; i++)
-            {
-                for (int k = 0; k < 50; k++)
-                {
-                    b += face.Data[i, k, 0];
-                    g += face.Data[i, k, 1];
-                    r += face.Data[i, k, 2];
-                    count++;
-                }
-            }
-            for (int i = 0; i < 50; i++)
-            {
-                for (int k = face.Width; k > face.Width - 50; k--)
-                {
-                    b += face.Data[i, k, 0];
-                    g += face.Data[i, k, 1];
-                    r += face.Data[i, k, 2];
-                    count++;
-                }
-            }
-            b /= count;
-            g /= count;
-            r /= count;
-            return face.Rotate(degrees, new Bgr(b, g, r));*/
             return face.Rotate(degrees, face[0, 0]);
         }
-
-        public Image<Bgr, byte> alignFaces(Image<Bgr, byte> cutFace, Image<Bgr, byte> sketchCutFace,
-            Point face1LeftEye, Point face1RightEye,
-            Point face2LeftEye, Point face2RightEye)
-        {
-            double distanceEyeDifference = (double)(face2RightEye.X - face2LeftEye.X) / (face1RightEye.X - face1LeftEye.X);
-            int newWidth = (int)(cutFace.Width * distanceEyeDifference);
-            int newHeight = (int)(cutFace.Height * distanceEyeDifference);
-            cutFace = cutFace.Resize(newWidth, newHeight, Inter.Linear);
-            face1LeftEye.X = (int)(face1LeftEye.X * distanceEyeDifference);
-            face1LeftEye.Y = (int)(face1LeftEye.Y * distanceEyeDifference);
-            face1RightEye.X = (int)(face1RightEye.X * distanceEyeDifference);
-            face1RightEye.Y = (int)(face1RightEye.Y * distanceEyeDifference);
-
-            Image<Bgr, byte> cutFaceResized = new Image<Bgr, byte>(sketchCutFace.Width, sketchCutFace.Height);
-
-            var leftSide = face1LeftEye.X - face2LeftEye.X;
-            var px = leftSide;
-            var py = face1LeftEye.Y - face2LeftEye.Y;
-
-            for (int y = 0; y < sketchCutFace.Height; y++)
-            {
-                for (int x = 0; x < sketchCutFace.Width; x++)
-                {
-                    if (px >= 0 && py >= 0 && px < cutFace.Width && py < cutFace.Height)
-                    {
-                        cutFaceResized.Data[y, x, 0] = cutFace.Data[py, px, 0];
-                        cutFaceResized.Data[y, x, 1] = cutFace.Data[py, px, 1];
-                        cutFaceResized.Data[y, x, 2] = cutFace.Data[py, px, 2];
-                    }
-                    else
-                    {
-                        cutFaceResized.Data[y, x, 0] = 255;
-                        cutFaceResized.Data[y, x, 1] = 255;
-                        cutFaceResized.Data[y, x, 2] = 255;
-                    }
-                    px++;
-                }
-                px = leftSide;
-                py++;
-            }
-            return cutFaceResized;
-        }
-
-        public void getFaceROI(Image<Bgr, byte> face, Point leftEye, Point rightEye, Rectangle mouthIn, out Rectangle hair, out Rectangle brow, out Rectangle eyes, out Rectangle nose, out Rectangle mouthOut)
+        
+        public void faceROI(Image<Bgr, byte> face, Point leftEye, Point rightEye, Rectangle mouthIn, out Rectangle hair, out Rectangle brow, out Rectangle eyes, out Rectangle nose, out Rectangle mouthOut)
         {
             mouthOut = mouthIn;
             if (leftEye.Equals(new Point()))

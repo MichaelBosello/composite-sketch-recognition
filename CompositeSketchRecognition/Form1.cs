@@ -1,14 +1,9 @@
 ﻿using Emgu.CV;
 using Emgu.CV.Structure;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace CompositeSketchRecognition
@@ -49,6 +44,8 @@ namespace CompositeSketchRecognition
             }
             lsb.Sorted = true;
         }
+
+        // tab 1
 
         private void buttonQuery_Click(object sender, EventArgs e)
         {
@@ -164,6 +161,7 @@ namespace CompositeSketchRecognition
         }
 
         
+        // tab 2
 
         private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -226,7 +224,7 @@ namespace CompositeSketchRecognition
 
 
 
-
+        // tab 3
 
         private void buttonAccuracyTest_Click(object sender, EventArgs e)
         {
@@ -246,7 +244,7 @@ namespace CompositeSketchRecognition
         private void backgroundWorkerAccuracy_DoWork(object sender, DoWorkEventArgs e)
         {
             var backgroundWorkerAccuracy = sender as BackgroundWorker;
-            imageRetreivalSystem.test(backgroundWorkerAccuracy, out rank1, out rank10, out rank50, out rank100, out rank200);
+            imageRetreivalSystem.accuracyTest(backgroundWorkerAccuracy, out rank1, out rank10, out rank50, out rank100, out rank200);
         }
 
         private void backgroundWorkerAccuracy_ProgressChanged(object sender, ProgressChangedEventArgs e)

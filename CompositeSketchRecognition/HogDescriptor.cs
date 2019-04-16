@@ -11,17 +11,7 @@ namespace CompositeSketchRecognition
         public float[] GetHog(Image<Gray, Byte> image)
         {
             HOGDescriptor hog = new HOGDescriptor(image.Size, new Size(16, 16), new Size(8, 8), new Size(8, 8));
-            Point[] p = new Point[image.Width * image.Height];
-            int k = 0;
-            for (int i = 0; i < image.Width; i++)
-            {
-                for (int j = 0; j < image.Height; j++)
-                {
-                    Point p1 = new Point(i, j);
-                    p[k++] = p1;
-                }
-            }
-            float[] result = hog.Compute(image, new Size(0, 0), new Size(0, 0), p);
+            float[] result = hog.Compute(image);
             return result;
         }
 
@@ -37,9 +27,9 @@ namespace CompositeSketchRecognition
             return hogVisualization(image.Convert<Bgr, byte>(), descriptorValues);
         }
 
-            //Thanks to Carl Vondrick
-            //http://www.juergenbrauer.org/old_wiki/doku.php?id=public:hog_descriptor_computation_and_visualization
-            public Image<Bgr, Byte> hogVisualization(Image<Bgr, Byte> image, float[] descriptorValues)
+        //Thanks to Carl Vondrick
+        //http://www.juergenbrauer.org/old_wiki/doku.php?id=public:hog_descriptor_computation_and_visualization
+        public Image<Bgr, Byte> hogVisualization(Image<Bgr, Byte> image, float[] descriptorValues)
         {
             int DIMX = image.Width;
             int DIMY = image.Height;
