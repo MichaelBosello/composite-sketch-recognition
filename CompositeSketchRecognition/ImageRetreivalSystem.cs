@@ -20,14 +20,20 @@ namespace CompositeSketchRecognition
         public const string OTHER_PHOTO_PATH = @"..\..\..\database\UoM-SGFS-v2\Photos\Others\";
         public const string OTHER_PHOTO_EXTENSION = "*.jpg";
 
-        public const string DB_NAME = "descriptors.bin";
+        public const string DESCRIPTOR_FILE_NAME = "descriptors.bin";
 
         FaceDetection faceDetection = new FaceDetection();
         HogDescriptor hogDescriptor = new HogDescriptor();
+        SiftDescriptor siftDescriptor = new SiftDescriptor();
 
         List<FaceDescriptor> descriptors;
-        SortedDictionary<double, string> result =
+        SortedDictionary<double, string> resultHog =
             new SortedDictionary<double, string>();
+        SortedDictionary<double, string> resultSift =
+            new SortedDictionary<double, string>();
+        SortedDictionary<double, string> resultBordaCount =
+            new SortedDictionary<double, string>();
+
         string sketchName = "";
 
         //test on all images
@@ -96,9 +102,9 @@ namespace CompositeSketchRecognition
 
             if (descriptors == null)
             {
-                if (File.Exists(DB_NAME))
+                if (File.Exists(DESCRIPTOR_FILE_NAME))
                 {
-                    Stream openFileStream = File.OpenRead(DB_NAME);
+                    Stream openFileStream = File.OpenRead(DESCRIPTOR_FILE_NAME);
                     BinaryFormatter deserializer = new BinaryFormatter();
                     descriptors = (List<FaceDescriptor>)deserializer.Deserialize(openFileStream);
                     openFileStream.Close();
@@ -157,12 +163,19 @@ namespace CompositeSketchRecognition
                         roiToFixedImage(image, hair, brow, roiEyes, nose, realMouth,
                             out hairImage, out browImage, out eyesImage, out noseImage, out mouthImge);
 
-                        face.Hair = hogDescriptor.GetHog(hairImage);
-                        face.Brow = hogDescriptor.GetHog(browImage);
-                        face.Eyes = hogDescriptor.GetHog(eyesImage);
-                        face.Nose = hogDescriptor.GetHog(noseImage);
-                        face.Mouth = hogDescriptor.GetHog(mouthImge);
-                        face.processDescriptor();
+                        face.HairHog = hogDescriptor.GetHog(hairImage);
+                        face.BrowHog = hogDescriptor.GetHog(browImage);
+                        face.EyesHog = hogDescriptor.GetHog(eyesImage);
+                        face.NoseHog = hogDescriptor.GetHog(noseImage);
+                        face.MouthHog = hogDescriptor.GetHog(mouthImge);
+
+                        face.HairSift = siftDescriptor.ComputeDescriptor(hairImage);
+                        face.BrowSift = siftDescriptor.ComputeDescriptor(browImage);
+                        face.EyesSift = siftDescriptor.ComputeDescriptor(eyesImage);
+                        face.NoseSift = siftDescriptor.ComputeDescriptor(noseImage);
+                        face.MouthSift = siftDescriptor.ComputeDescriptor(mouthImge);
+
+                        face.processDescriptors();
 
                         descriptors.Add(face);
 
@@ -170,7 +183,7 @@ namespace CompositeSketchRecognition
                             worker.ReportProgress(i * 100 / files.Count);
                     }
 
-                    Stream SaveFileStream = File.Create(DB_NAME);
+                    Stream SaveFileStream = File.Create(DESCRIPTOR_FILE_NAME);
                     BinaryFormatter serializer = new BinaryFormatter();
                     serializer.Serialize(SaveFileStream, descriptors);
                     SaveFileStream.Close();
@@ -209,24 +222,64 @@ namespace CompositeSketchRecognition
             roiToFixedImage(sketch, sketchHair, sketchBrow, sketchRoiEyes, sketchNose, sketchRealMouth,
                 out sketchHairImage, out sketchBrowImage, out sketchEyesImage, out sketchNoseImage, out sketchMouthImage);
 
-            sketchFace.Hair = hogDescriptor.GetHog(sketchHairImage);
-            sketchFace.Brow = hogDescriptor.GetHog(sketchBrowImage);
-            sketchFace.Eyes = hogDescriptor.GetHog(sketchEyesImage);
-            sketchFace.Nose = hogDescriptor.GetHog(sketchNoseImage);
-            sketchFace.Mouth = hogDescriptor.GetHog(sketchMouthImage);
-            sketchFace.processDescriptor();
+            sketchFace.HairHog = hogDescriptor.GetHog(sketchHairImage);
+            sketchFace.BrowHog = hogDescriptor.GetHog(sketchBrowImage);
+            sketchFace.EyesHog = hogDescriptor.GetHog(sketchEyesImage);
+            sketchFace.NoseHog = hogDescriptor.GetHog(sketchNoseImage);
+            sketchFace.MouthHog = hogDescriptor.GetHog(sketchMouthImage);
 
-            result = new SortedDictionary<double, string>();
+            sketchFace.HairSift = siftDescriptor.ComputeDescriptor(sketchHairImage);
+            sketchFace.BrowSift = siftDescriptor.ComputeDescriptor(sketchBrowImage);
+            sketchFace.EyesSift = siftDescriptor.ComputeDescriptor(sketchEyesImage);
+            sketchFace.NoseSift = siftDescriptor.ComputeDescriptor(sketchNoseImage);
+            sketchFace.MouthSift = siftDescriptor.ComputeDescriptor(sketchMouthImage);
+
+            sketchFace.processDescriptors();
+
+            resultHog = new SortedDictionary<double, string>();
+            resultSift = new SortedDictionary<double, string>();
+            resultBordaCount = new SortedDictionary<double, string>();
 
             for (int i = 0; i < descriptors.Count; i++)
             {
-                result.Add(euclideanDistance(sketchFace.Descriptor, descriptors[i].Descriptor), descriptors[i].Name);
+                addDictionaryUnique(euclideanDistance(sketchFace.DescriptorHog, descriptors[i].DescriptorHog), descriptors[i].Name, resultHog);
+                addDictionaryUnique(euclideanDistance(sketchFace.DescriptorSift, descriptors[i].DescriptorSift), descriptors[i].Name, resultSift);
                 if (progress)
                     worker.ReportProgress(i * 100 / descriptors.Count);
             }
 
+            Dictionary<string, int> dictionary = new Dictionary<string, int>();
+            int count = 0;
+            foreach (var r in resultHog)
+            {
+                dictionary.Add(r.Value, (resultHog.Count - count) * 2);//weight
+                count++;
+            }
+            count = 0;
+            foreach (var r in resultSift)
+            {
+                dictionary[r.Value] += resultSift.Count - count;
+                count++;
+            }
+            foreach (var r in dictionary)
+            {
+                double value = r.Value;
+                //negative int because sorted dictionary work in ascending mode only
+                addDictionaryUnique(-r.Value, r.Key, resultBordaCount);
+            }
+
+
             if (progress)
                 worker.ReportProgress(100);
+        }
+
+        void addDictionaryUnique(double key, String value, SortedDictionary<double, string> dictionary)
+        {
+            while (dictionary.ContainsKey(key))
+            {
+                key += 0.0001;
+            }
+            dictionary.Add(key, value);
         }
 
         double euclideanDistance(float[] q, float[] p)
@@ -258,7 +311,7 @@ namespace CompositeSketchRecognition
         public Image<Bgr, byte> getImage(int index)
         {
             int count = 0;
-            foreach (var r in result)
+            foreach (var r in resultBordaCount)
             {
                 if (count == index)
                 {
@@ -283,7 +336,7 @@ namespace CompositeSketchRecognition
         {
             int index = -1;
             int count = 1;
-            foreach (var r in result)
+            foreach (var r in resultBordaCount)
             {
                 if (r.Value.StartsWith(sketchName))
                 {

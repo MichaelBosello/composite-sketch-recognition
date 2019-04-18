@@ -7,44 +7,55 @@ namespace CompositeSketchRecognition
     class FaceDescriptor
     {
         public String Name { get; set; }
-        public float[] Hair { get; set; }
-        public float[] Brow { get; set; }
-        public float[] Eyes { get; set; }
-        public float[] Nose { get; set; }
-        public float[] Mouth { get; set; }
+        public float[] HairHog { get; set; }
+        public float[] BrowHog { get; set; }
+        public float[] EyesHog { get; set; }
+        public float[] NoseHog { get; set; }
+        public float[] MouthHog { get; set; }
 
-        public float[] Descriptor { get; set; }
+        public float[] HairSift { get; set; }
+        public float[] BrowSift { get; set; }
+        public float[] EyesSift { get; set; }
+        public float[] NoseSift { get; set; }
+        public float[] MouthSift { get; set; }
 
-        public FaceDescriptor(string name, float[] hair, float[] brow, float[] eyes,float[] nose, float[] mouth)
-        {
-            Name = name;
-            Hair = hair;
-            Brow = brow;
-            Eyes = eyes;
-            Nose = nose;
-            Mouth = mouth;
-        }
+        public float[] DescriptorHog { get; set; }
+        public float[] DescriptorSift { get; set; }
 
         public FaceDescriptor(string name)
         {
             Name = name;
         }
 
-        public void processDescriptor()
+        public void processDescriptors()
         {
             List<float> list = new List<float>();
-            list.AddRange(Hair);
-            list.AddRange(Brow);
-            list.AddRange(Eyes);
-            list.AddRange(Nose);
-            list.AddRange(Mouth);
-            Descriptor = list.ToArray();
+            list.AddRange(HairHog);
+            list.AddRange(BrowHog);
+            list.AddRange(EyesHog);
+            list.AddRange(NoseHog);
+            list.AddRange(MouthHog);
+            DescriptorHog = list.ToArray();
 
-            Hair = null;
-            Brow = null;
-            Eyes = null;
-            Nose = null;
-            Mouth = null;
+            HairHog = null;
+            BrowHog = null;
+            EyesHog = null;
+            NoseHog = null;
+            MouthHog = null;
+
+            list = new List<float>();
+            list.AddRange(HairSift);
+            list.AddRange(BrowSift);
+            list.AddRange(EyesSift);
+            list.AddRange(NoseSift);
+            list.AddRange(MouthSift);
+            DescriptorSift = list.ToArray();
+
+            HairSift = null;
+            BrowSift = null;
+            EyesSift = null;
+            NoseSift = null;
+            MouthSift = null;
         }
     }
 }

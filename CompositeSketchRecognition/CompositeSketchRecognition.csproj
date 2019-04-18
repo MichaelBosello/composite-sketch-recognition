@@ -54,6 +54,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SiftDescriptor.cs" />
     <Compile Include="Face.cs" />
     <Compile Include="FaceDetection.cs" />
     <Compile Include="HogDescriptor.cs" />
