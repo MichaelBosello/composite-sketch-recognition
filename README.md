@@ -22,15 +22,15 @@ Steps:
 
     + If you want to use the suggested database:
 
-        The file _database-link.txt_ contains links to suggested database. The sub-directories of _UoM-SGFS-v2_ have txt files containing the list of used files
+        The file _database-link.txt_ contains links to suggested database. The sub-directories of _UoM-SGFS-v2_ have txt files containing the list of used files.
         
         Please, note that only frontal face images without duplicates have been kept, so, rely on images list.
 
-        Dir _Sketches/Set A_ and _Sketches/Set B_ contains only selected images from **UoM-SGFS**
+        Dir _Sketches/Set A_ and _Sketches/Set B_ contains only selected images from **UoM-SGFS**.
 
-        Dir _Photos/Images_ contains only selected images from **FERET**
+        Dir _Photos/Images_ contains only selected images from **FERET**.
 
-        Dir _Photos/Others_ contains selected images from **CUFS** and **PRIP-HDC**
+        Dir _Photos/Others_ contains selected images from **CUFS** and **PRIP-HDC**.
 
         
 
