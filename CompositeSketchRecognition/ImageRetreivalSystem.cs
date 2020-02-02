@@ -81,19 +81,11 @@ namespace CompositeSketchRecognition
             worker.ReportProgress(100);
         }
 
-        public void search(String sketchPath)
-        {
-            search(sketchPath, null, false);
-        }
-
-        public void search(String sketchPath, BackgroundWorker worker)
-        {
-            search(sketchPath, worker, true);
-        }
 
         // main query method
-        private void search(String sketchPath, BackgroundWorker worker, bool progress)
+        public void search(String sketchPath, BackgroundWorker worker = null)
         {
+            bool progress = (worker != null);
             if (sketchPath.Equals("")) { return; }
 
             sketchName = sketchPath.Substring(sketchPath.LastIndexOf('\\') + 1, 5);

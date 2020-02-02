@@ -32,7 +32,7 @@
             this.buttonQuery = new System.Windows.Forms.Button();
             this.labelFoundIn = new System.Windows.Forms.Label();
             this.labelFound = new System.Windows.Forms.Label();
-            this.sketch = new Emgu.CV.UI.ImageBox();
+            this.sketchImageBox = new Emgu.CV.UI.ImageBox();
             this.imageBox1 = new Emgu.CV.UI.ImageBox();
             this.imageBox2 = new Emgu.CV.UI.ImageBox();
             this.imageBox3 = new Emgu.CV.UI.ImageBox();
@@ -74,7 +74,7 @@
             this.buttonAccuracyTest = new System.Windows.Forms.Button();
             this.progressBarAccuracy = new System.Windows.Forms.ProgressBar();
             this.backgroundWorkerAccuracy = new System.ComponentModel.BackgroundWorker();
-            ((System.ComponentModel.ISupportInitialize)(this.sketch)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.sketchImageBox)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox3)).BeginInit();
@@ -123,14 +123,14 @@
             // 
             // sketch
             // 
-            this.sketch.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.sketch.FunctionalMode = Emgu.CV.UI.ImageBox.FunctionalModeOption.PanAndZoom;
-            this.sketch.Location = new System.Drawing.Point(6, 330);
-            this.sketch.Name = "sketch";
-            this.sketch.Size = new System.Drawing.Size(357, 447);
-            this.sketch.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.sketch.TabIndex = 6;
-            this.sketch.TabStop = false;
+            this.sketchImageBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.sketchImageBox.FunctionalMode = Emgu.CV.UI.ImageBox.FunctionalModeOption.PanAndZoom;
+            this.sketchImageBox.Location = new System.Drawing.Point(6, 330);
+            this.sketchImageBox.Name = "sketch";
+            this.sketchImageBox.Size = new System.Drawing.Size(357, 447);
+            this.sketchImageBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.sketchImageBox.TabIndex = 6;
+            this.sketchImageBox.TabStop = false;
             // 
             // imageBox1
             // 
@@ -373,7 +373,7 @@
             this.tabPage1.Controls.Add(this.progressBar);
             this.tabPage1.Controls.Add(this.tableLayoutPanel1);
             this.tabPage1.Controls.Add(this.panel1);
-            this.tabPage1.Controls.Add(this.sketch);
+            this.tabPage1.Controls.Add(this.sketchImageBox);
             this.tabPage1.Controls.Add(this.labelSketchID);
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
             this.tabPage1.Name = "tabPage1";
@@ -617,7 +617,7 @@
             this.Controls.Add(this.tabControl1);
             this.Name = "Form1";
             this.Text = "Form1";
-            ((System.ComponentModel.ISupportInitialize)(this.sketch)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.sketchImageBox)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox2)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox3)).EndInit();
@@ -646,7 +646,7 @@
         private System.Windows.Forms.Button buttonQuery;
         private System.Windows.Forms.Label labelFoundIn;
         private System.Windows.Forms.Label labelFound;
-        private Emgu.CV.UI.ImageBox sketch;
+        private Emgu.CV.UI.ImageBox sketchImageBox;
         private Emgu.CV.UI.ImageBox imageBox1;
         private Emgu.CV.UI.ImageBox imageBox2;
         private Emgu.CV.UI.ImageBox imageBox3;

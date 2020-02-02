@@ -49,7 +49,7 @@ namespace CompositeSketchRecognition
 
         private void buttonQuery_Click(object sender, EventArgs e)
         {
-            sketch.Image = null;
+            sketchImageBox.Image = null;
             imageBox1.Image = null;
             imageBox2.Image = null;
             imageBox3.Image = null;
@@ -79,7 +79,7 @@ namespace CompositeSketchRecognition
                     if (dlg.ShowDialog() == DialogResult.OK)
                     {
                         labelSketchID.Text = dlg.FileName;
-                        sketch.Image = new Image<Bgr, byte>(labelSketchID.Text);
+                        sketchImageBox.Image = new Image<Bgr, byte>(labelSketchID.Text);
                     }
                 }
                 backgroundWorker.RunWorkerAsync();

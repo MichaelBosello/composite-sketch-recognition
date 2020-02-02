@@ -42,12 +42,10 @@ namespace CompositeSketchRecognition
             int gradientBinSize = 9;
             float radRangeForOneBin = (float)(Math.PI / (float)gradientBinSize); // dividing 180 into 9 bins, how large (in rad) is one bin?
 
-            // prepare data structure: 9 orientation / gradient strenghts for each cell
             int cells_in_x_dir = DIMX / cellSize;
             int cells_in_y_dir = DIMY / cellSize;
 
-
-
+            // prepare data structure
             float[][][] gradientStrengths = new float[cells_in_y_dir][][];
             int[][] cellUpdateCounter = new int[cells_in_y_dir][];
             for (int y = 0; y < cells_in_y_dir; y++)
