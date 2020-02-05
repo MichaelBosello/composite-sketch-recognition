@@ -10,14 +10,14 @@ namespace CompositeSketchRecognition
     {
         public float[] GetHog(Image<Gray, Byte> image)
         {
-            HOGDescriptor hog = new HOGDescriptor(image.Size, new Size(16, 16), new Size(8, 8), new Size(8, 8));
+            HOGDescriptor hog = new HOGDescriptor(image.Size, new Size(26, 26), new Size(13, 13), new Size(13, 13));
             float[] result = hog.Compute(image);
             return result;
         }
 
         public float[] GetHog(Image<Bgr, Byte> image)
         {
-            HOGDescriptor hog = new HOGDescriptor(image.Size, new Size(16, 16), new Size(8, 8), new Size(8, 8));
+            HOGDescriptor hog = new HOGDescriptor(image.Size, new Size(26, 26), new Size(13, 13), new Size(13, 13));
             float[] result = hog.Compute(image);
             return result;
         }

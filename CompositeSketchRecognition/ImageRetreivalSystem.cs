@@ -48,7 +48,7 @@ namespace CompositeSketchRecognition
             FileInfo[] sketches = dinfo.GetFiles(SKETCH_EXTENSION);
             for (int i = 0; i < sketches.Length; i++)
             {
-                search(sketches[i].FullName);
+                search(sketches[i].FullName, worker, true);
                 var index = getSubjectIndex();
                 if (index == 1)
                 {
@@ -83,7 +83,7 @@ namespace CompositeSketchRecognition
 
 
         // main query method
-        public void search(String sketchPath, BackgroundWorker worker = null)
+        public void search(String sketchPath, BackgroundWorker worker = null, bool progressOnlyDescriptor = false)
         {
             bool progress = (worker != null);
             if (sketchPath.Equals("")) { return; }
@@ -182,7 +182,7 @@ namespace CompositeSketchRecognition
                 }
             }
 
-            if (progress)
+            if (progress && !progressOnlyDescriptor)
                 worker.ReportProgress(0);
 
             Rectangle sketchRealFace; Rectangle[] sketchRealEyes; Rectangle sketchRealMouth;
@@ -234,9 +234,15 @@ namespace CompositeSketchRecognition
 
             for (int i = 0; i < descriptors.Count; i++)
             {
-                addDictionaryUnique(euclideanDistance(sketchFace.DescriptorHog, descriptors[i].DescriptorHog), descriptors[i].Name, resultHog);
-                addDictionaryUnique(euclideanDistance(sketchFace.DescriptorSift, descriptors[i].DescriptorSift), descriptors[i].Name, resultSift);
-                if (progress)
+                addDictionaryUnique(
+                    euclideanDistance(
+                        sketchFace.DescriptorHog, descriptors[i].DescriptorHog
+                    ), descriptors[i].Name, resultHog);
+                addDictionaryUnique(
+                    euclideanDistance(
+                        sketchFace.DescriptorSift, descriptors[i].DescriptorSift
+                    ), descriptors[i].Name, resultSift);
+                if (progress && !progressOnlyDescriptor)
                     worker.ReportProgress(i * 100 / descriptors.Count);
             }
 
@@ -261,7 +267,7 @@ namespace CompositeSketchRecognition
             }
 
 
-            if (progress)
+            if (progress && !progressOnlyDescriptor)
                 worker.ReportProgress(100);
         }
 
@@ -287,11 +293,11 @@ namespace CompositeSketchRecognition
         void roiToFixedImage(Image<Bgr, Byte> face, Rectangle hairRoi, Rectangle browRoi, Rectangle eyesRoi, Rectangle noseRoi, Rectangle mouthRoi,
             out Image<Bgr, byte> hair, out Image<Bgr, byte> brow, out Image<Bgr, byte> eyes, out Image<Bgr, byte> nose, out Image<Bgr, byte> mouth)
         {
-            hair = face.GetSubRect(hairRoi).Resize(176, 48, Inter.Linear);
-            brow = face.GetSubRect(browRoi).Resize(128, 16, Inter.Linear);
-            eyes = face.GetSubRect(eyesRoi).Resize(112, 16, Inter.Linear);
-            nose = face.GetSubRect(noseRoi).Resize(64, 80, Inter.Linear);
-            mouth = face.GetSubRect(mouthRoi).Resize(48, 32, Inter.Linear);
+            hair = face.GetSubRect(hairRoi).Resize(156, 52, Inter.Linear);
+            brow = face.GetSubRect(browRoi).Resize(130, 26, Inter.Linear);
+            eyes = face.GetSubRect(eyesRoi).Resize(130, 26, Inter.Linear);
+            nose = face.GetSubRect(noseRoi).Resize(52, 78, Inter.Linear);
+            mouth = face.GetSubRect(mouthRoi).Resize(52, 26, Inter.Linear);
         }
 
 
