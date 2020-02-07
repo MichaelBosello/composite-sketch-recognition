@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.ComponentModel;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Linq;
 
 namespace CompositeSketchRecognition
 {
@@ -21,12 +22,19 @@ namespace CompositeSketchRecognition
         public const string OTHER_PHOTO_EXTENSION = "*.jpg";
 
         public const string DESCRIPTOR_FILE_NAME = "descriptors.bin";
+        public const string LDA_FILE_NAME = "lda.bin";
+
+        public const int TRAINING_SIZE = 150;
+        public const int TEST_SIZE = 150;
 
         FaceDetection faceDetection = new FaceDetection();
         HogDescriptor hogDescriptor = new HogDescriptor();
         SiftDescriptor siftDescriptor = new SiftDescriptor();
 
         List<FaceDescriptor> descriptors;
+        LDA lda;
+        List<String> trainingSetSketchesPath;
+        List<String> testSetSketchesPath;
         SortedDictionary<double, string> resultHog =
             new SortedDictionary<double, string>();
         SortedDictionary<double, string> resultSift =
@@ -44,11 +52,10 @@ namespace CompositeSketchRecognition
             rank50 = 0;
             rank100 = 0;
             rank200 = 0;
-            DirectoryInfo dinfo = new DirectoryInfo(SKETCH_PATH);
-            FileInfo[] sketches = dinfo.GetFiles(SKETCH_EXTENSION);
-            for (int i = 0; i < sketches.Length; i++)
+            loadTraining();
+            for (int i = 0; i < testSetSketchesPath.Count; i++)
             {
-                search(sketches[i].FullName, worker, true);
+                search(testSetSketchesPath[i], worker, true);
                 var index = getSubjectIndex();
                 if (index == 1)
                 {
@@ -70,27 +77,113 @@ namespace CompositeSketchRecognition
                 {
                     rank200++;
                 }
-                worker.ReportProgress(i * 100 / sketches.Length);
+                worker.ReportProgress(i * 100 / testSetSketchesPath.Count);
             }
 
-            rank1 /= sketches.Length;
-            rank10 /= sketches.Length;
-            rank50 /= sketches.Length;
-            rank100 /= sketches.Length;
-            rank200 /= sketches.Length;
+            rank1 /= testSetSketchesPath.Count;
+            rank10 /= testSetSketchesPath.Count;
+            rank50 /= testSetSketchesPath.Count;
+            rank100 /= testSetSketchesPath.Count;
+            rank200 /= testSetSketchesPath.Count;
             worker.ReportProgress(100);
         }
 
+        public void training(BackgroundWorker worker = null){
+            bool progress = (worker != null);
+            if (lda.projectingVectorHOG == null)
+            {
+                List<FaceDescriptor> trainingDescriptors = new List<FaceDescriptor>();
+                for (int i = 0; i < trainingSetSketchesPath.Count; i++)
+                {
+                    FaceDescriptor face = processImage(trainingSetSketchesPath[i], lda.trainingSet[i], true);
+                    trainingDescriptors.Add(face);
+
+                    if(progress)
+                        worker.ReportProgress(i * 100 / trainingSetSketchesPath.Count);
+                }
+
+                if(progress)
+                    worker.ReportProgress(0);
+
+                Dictionary<string, FaceDescriptor> descriptorsWithName = new Dictionary<string, FaceDescriptor>();
+
+                foreach(var descriptor in descriptors){
+                    string name = descriptor.Name.Substring(0, 5);
+                    if (!descriptorsWithName.ContainsKey(name))
+                    {
+                        descriptorsWithName.Add(name, descriptor);
+                    }
+                }
+
+                int NPoints = TRAINING_SIZE * 2;
+                int NClasses = TRAINING_SIZE;
+                int NVarsHOG = trainingDescriptors[0].DescriptorHog.Count();
+                int NVarsSIFT = trainingDescriptors[0].DescriptorSift.Count();
+
+                double[,] xyHOG = new double[NPoints, NVarsHOG + 1];
+                double[,] xySIFT = new double[NPoints, NVarsSIFT + 1];
+                for (int i = 0; i < TRAINING_SIZE; i++)
+                {
+                    FaceDescriptor photoDescriptor = descriptorsWithName[trainingDescriptors[i].Name];
+
+                    for(int k = 0; k < NVarsHOG; k++){
+                        xyHOG[i, k] = trainingDescriptors[i].DescriptorHog[k];
+                        xyHOG[i + TRAINING_SIZE, k] = photoDescriptor.DescriptorHog[k];
+                    }
+                    xyHOG[i, NVarsHOG] = i;
+                    xyHOG[i + TRAINING_SIZE, NVarsHOG] = i;
+
+                    for(int k = 0; k < NVarsSIFT; k++){
+                        xySIFT[i, k] = trainingDescriptors[i].DescriptorSift[k];
+                        xySIFT[i + TRAINING_SIZE, k] = photoDescriptor.DescriptorSift[k];
+                    }
+                    xySIFT[i, NVarsSIFT] = i;
+                    xySIFT[i + TRAINING_SIZE, NVarsSIFT] = i;
+
+                    if(progress)
+                        worker.ReportProgress(i * 100 / TRAINING_SIZE);
+                }
+
+                int info = 0;
+                double[] wHOG = new double[0];
+                double[] wSIFT = new double[0];
+
+                //double[] wSIFT = new double[NVarsSIFT];
+                //for(int i = 0; i < NVarsSIFT; i++)
+                //    wSIFT[i] = 1;
+
+                alglib.lda.fisherlda(xyHOG, NPoints, NVarsHOG, NClasses, ref info, ref wHOG, null);
+                alglib.lda.fisherlda(xySIFT, NPoints, NVarsSIFT, NClasses, ref info, ref wSIFT, null);
+                lda.projectingVectorHOG = wHOG;
+                lda.projectingVectorSIFT = wSIFT;
+            }
+        }
+        public void loadTraining()
+        {
+            
+            if (lda == null)
+            {
+                lda = new LDA();
+                List<FileInfo> files = new List<FileInfo>();
+                DirectoryInfo dinfo = new DirectoryInfo(SKETCH_PATH);
+                files.AddRange(dinfo.GetFiles(SKETCH_EXTENSION));
+
+                Random rnd = new Random();
+                files.OrderBy(x => rnd.Next());
+                List<FileInfo> trainingSet = files.Take(TRAINING_SIZE).ToList();
+                List<FileInfo> testSet = files.Skip(TRAINING_SIZE).Take(TEST_SIZE).ToList();
+
+                trainingSetSketchesPath = trainingSet.Select(file => file.FullName).ToList();
+                testSetSketchesPath = testSet.Select(file => file.FullName).ToList();
+                lda.trainingSet = trainingSetSketchesPath.Select(file => file.Substring(file.LastIndexOf('\\') + 1, 5)).ToList();
+            }
+        }
 
         // main query method
         public void search(String sketchPath, BackgroundWorker worker = null, bool progressOnlyDescriptor = false)
         {
             bool progress = (worker != null);
             if (sketchPath.Equals("")) { return; }
-
-            sketchName = sketchPath.Substring(sketchPath.LastIndexOf('\\') + 1, 5);
-            Rectangle[] faces; Rectangle[] eyes; Rectangle[] mouths;//placeholder for out, not important for query
-            Image<Bgr, byte> sketch = new Image<Bgr, byte>(sketchPath);
 
             if (descriptors == null)
             {
@@ -105,70 +198,15 @@ namespace CompositeSketchRecognition
                 {
                     descriptors = new List<FaceDescriptor>();
                     List<FileInfo> files = new List<FileInfo>();
-
                     DirectoryInfo dinfo = new DirectoryInfo(PHOTO_PATH);
                     files.AddRange(dinfo.GetFiles(PHOTO_EXTENSION));
-                    
-                    dinfo = new DirectoryInfo(OTHER_PHOTO_PATH);
-                    files.AddRange(dinfo.GetFiles(PHOTO_EXTENSION));
-                    files.AddRange(dinfo.GetFiles(OTHER_PHOTO_EXTENSION));
+                    //dinfo = new DirectoryInfo(OTHER_PHOTO_PATH);
+                    //files.AddRange(dinfo.GetFiles(PHOTO_EXTENSION));
+                    //files.AddRange(dinfo.GetFiles(OTHER_PHOTO_EXTENSION));
 
                     for (int i = 0; i < files.Count; i++)
                     {
-                        Image<Bgr, byte> image = new Image<Bgr, byte>(files[i].FullName);
-                        Rectangle realFace; Rectangle[] realEyes; Rectangle realMouth;
-                        faceDetection.faceAndLandmarks(image, out realFace, out realEyes, out realMouth, out faces, out eyes, out mouths);
-                        var extendedFace = faceDetection.extendFace(image, realFace, faceDetection.faceOutline(image));
-                        image = image.GetSubRect(extendedFace);
-
-                        FaceDescriptor face = new FaceDescriptor(files[i].Name);
-
-                        realMouth.X += realFace.X - extendedFace.X;
-                        realMouth.Y += realFace.Y - extendedFace.Y;
-
-                        Point leftEye = new Point(); Point rightEye = new Point();
-                        if (realEyes.Length == 2)
-                        {
-                            faceDetection.eyesCenter(realEyes, out leftEye, out rightEye);
-                            leftEye.X += realFace.X - extendedFace.X;
-                            leftEye.Y += realFace.Y - extendedFace.Y;
-                            rightEye.X += realFace.X - extendedFace.X;
-                            rightEye.Y += realFace.Y - extendedFace.Y;
-
-                            Point rotatedLeftEye; Point rotatedRightEye;
-                            image = faceDetection.alignEyes(image, leftEye, rightEye, out rotatedLeftEye, out rotatedRightEye);
-                            leftEye = rotatedLeftEye;
-                            rightEye = rotatedRightEye;
-
-                            realMouth = faceDetection.getMouth(
-                                image.GetSubRect(
-                                new Rectangle(new Point(0, 0), new Size((int)(image.Width * 0.9), (int)(image.Height * 0.9)))
-                            ));
-                        }
-
-                        Rectangle hair; Rectangle brow; Rectangle roiEyes; Rectangle nose;
-                        faceDetection.faceROI(image, leftEye, rightEye, realMouth,
-                            out hair, out brow, out roiEyes, out nose, out realMouth);
-
-                        Image<Bgr, byte> hairImage; Image<Bgr, byte> browImage;
-                        Image<Bgr, byte> eyesImage; Image<Bgr, byte> noseImage; Image<Bgr, byte> mouthImge;
-                        roiToFixedImage(image, hair, brow, roiEyes, nose, realMouth,
-                            out hairImage, out browImage, out eyesImage, out noseImage, out mouthImge);
-
-                        face.HairHog = hogDescriptor.GetHog(hairImage);
-                        face.BrowHog = hogDescriptor.GetHog(browImage);
-                        face.EyesHog = hogDescriptor.GetHog(eyesImage);
-                        face.NoseHog = hogDescriptor.GetHog(noseImage);
-                        face.MouthHog = hogDescriptor.GetHog(mouthImge);
-
-                        face.HairSift = siftDescriptor.ComputeDescriptor(hairImage);
-                        face.BrowSift = siftDescriptor.ComputeDescriptor(browImage);
-                        face.EyesSift = siftDescriptor.ComputeDescriptor(eyesImage);
-                        face.NoseSift = siftDescriptor.ComputeDescriptor(noseImage);
-                        face.MouthSift = siftDescriptor.ComputeDescriptor(mouthImge);
-
-                        face.processDescriptors();
-
+                        FaceDescriptor face = processImage(files[i].FullName, files[i].Name, true);
                         descriptors.Add(face);
 
                         if(progress)
@@ -180,57 +218,37 @@ namespace CompositeSketchRecognition
                     serializer.Serialize(SaveFileStream, descriptors);
                     SaveFileStream.Close();
                 }
+
+                training(worker);
+
+                for (int i = 0; i < descriptors.Count; i++)
+                {
+                    for(int k = 0; k < descriptors[i].DescriptorHog.Count(); k++){
+                        descriptors[i].DescriptorHog[k] *= (float)lda.projectingVectorHOG[k];
+                    }
+                    for(int k = 0; k < descriptors[i].DescriptorSift.Count(); k++){
+                        descriptors[i].DescriptorSift[k] *= (float)lda.projectingVectorSIFT[k];
+                    }
+                }
             }
+
 
             if (progress && !progressOnlyDescriptor)
                 worker.ReportProgress(0);
 
-            Rectangle sketchRealFace; Rectangle[] sketchRealEyes; Rectangle sketchRealMouth;
-            faceDetection.faceAndLandmarks(sketch, out sketchRealFace, out sketchRealEyes, out sketchRealMouth, out faces, out eyes, out mouths);
-            var extendedSketchface = faceDetection.extendFace(sketch, sketchRealFace, faceDetection.faceOutline(sketch));
-            sketch = sketch.GetSubRect(extendedSketchface);
-
-            sketchRealMouth.X += sketchRealFace.X - extendedSketchface.X;
-            sketchRealMouth.Y += sketchRealFace.Y - extendedSketchface.Y;
-
-            Point sketchLeftEye = new Point(); Point sketchRightEye = new Point();
-            if (sketchRealEyes.Length == 2)
-            {
-                faceDetection.eyesCenter(sketchRealEyes, out sketchLeftEye, out sketchRightEye);
-                sketchLeftEye.X += sketchRealFace.X - extendedSketchface.X;
-                sketchLeftEye.Y += sketchRealFace.Y - extendedSketchface.Y;
-                sketchRightEye.X += sketchRealFace.X - extendedSketchface.X;
-                sketchRightEye.Y += sketchRealFace.Y - extendedSketchface.Y;
-            }
-
-            FaceDescriptor sketchFace = new FaceDescriptor(sketchName);
-
-            Rectangle sketchHair; Rectangle sketchBrow; Rectangle sketchRoiEyes; Rectangle sketchNose;
-            faceDetection.faceROI(sketch, sketchLeftEye, sketchRightEye, sketchRealMouth,
-                out sketchHair, out sketchBrow, out sketchRoiEyes, out sketchNose, out sketchRealMouth);
-
-            Image<Bgr, byte> sketchHairImage; Image<Bgr, byte> sketchBrowImage;
-            Image<Bgr, byte> sketchEyesImage; Image<Bgr, byte> sketchNoseImage; Image<Bgr, byte> sketchMouthImage;
-            roiToFixedImage(sketch, sketchHair, sketchBrow, sketchRoiEyes, sketchNose, sketchRealMouth,
-                out sketchHairImage, out sketchBrowImage, out sketchEyesImage, out sketchNoseImage, out sketchMouthImage);
-
-            sketchFace.HairHog = hogDescriptor.GetHog(sketchHairImage);
-            sketchFace.BrowHog = hogDescriptor.GetHog(sketchBrowImage);
-            sketchFace.EyesHog = hogDescriptor.GetHog(sketchEyesImage);
-            sketchFace.NoseHog = hogDescriptor.GetHog(sketchNoseImage);
-            sketchFace.MouthHog = hogDescriptor.GetHog(sketchMouthImage);
-
-            sketchFace.HairSift = siftDescriptor.ComputeDescriptor(sketchHairImage);
-            sketchFace.BrowSift = siftDescriptor.ComputeDescriptor(sketchBrowImage);
-            sketchFace.EyesSift = siftDescriptor.ComputeDescriptor(sketchEyesImage);
-            sketchFace.NoseSift = siftDescriptor.ComputeDescriptor(sketchNoseImage);
-            sketchFace.MouthSift = siftDescriptor.ComputeDescriptor(sketchMouthImage);
-
-            sketchFace.processDescriptors();
+            sketchName = sketchPath.Substring(sketchPath.LastIndexOf('\\') + 1, 5);
+            FaceDescriptor sketchFace = processImage(sketchPath, sketchName, false);
 
             resultHog = new SortedDictionary<double, string>();
             resultSift = new SortedDictionary<double, string>();
             resultBordaCount = new SortedDictionary<double, string>();
+
+            for(int i = 0; i < sketchFace.DescriptorHog.Count(); i++){
+                sketchFace.DescriptorHog[i] *= (float)lda.projectingVectorHOG[i];
+            }
+            for(int i = 0; i < sketchFace.DescriptorSift.Count(); i++){
+                sketchFace.DescriptorSift[i] *= (float)lda.projectingVectorSIFT[i];
+            }
 
             for (int i = 0; i < descriptors.Count; i++)
             {
@@ -266,7 +284,6 @@ namespace CompositeSketchRecognition
                 addDictionaryUnique(-r.Value, r.Key, resultBordaCount);
             }
 
-
             if (progress && !progressOnlyDescriptor)
                 worker.ReportProgress(100);
         }
@@ -290,14 +307,75 @@ namespace CompositeSketchRecognition
             return Math.Sqrt(distance);
         }
 
+        FaceDescriptor processImage(string path, string name, bool isPhoto)
+        {
+            Image<Bgr, byte> image = new Image<Bgr, byte>(path);
+            Rectangle realFace; Rectangle[] realEyes; Rectangle realMouth;
+            Rectangle[] faces; Rectangle[] eyes; Rectangle[] mouths;//placeholder for out, not important for query
+            faceDetection.faceAndLandmarks(image, out realFace, out realEyes, out realMouth, out faces, out eyes, out mouths);
+            var extendedFace = faceDetection.extendFace(image, realFace, faceDetection.faceOutline(image));
+            image = image.GetSubRect(extendedFace);
+
+            FaceDescriptor face = new FaceDescriptor(name);
+
+            realMouth.X += realFace.X - extendedFace.X;
+            realMouth.Y += realFace.Y - extendedFace.Y;
+
+            Point leftEye = new Point(); Point rightEye = new Point();
+            if (realEyes.Length == 2)
+            {
+                faceDetection.eyesCenter(realEyes, out leftEye, out rightEye);
+                leftEye.X += realFace.X - extendedFace.X;
+                leftEye.Y += realFace.Y - extendedFace.Y;
+                rightEye.X += realFace.X - extendedFace.X;
+                rightEye.Y += realFace.Y - extendedFace.Y;
+
+                if(isPhoto){
+                    Point rotatedLeftEye; Point rotatedRightEye;
+                    image = faceDetection.alignEyes(image, leftEye, rightEye, out rotatedLeftEye, out rotatedRightEye);
+                    leftEye = rotatedLeftEye;
+                    rightEye = rotatedRightEye;
+
+                    realMouth = faceDetection.getMouth(
+                        image.GetSubRect(
+                        new Rectangle(new Point(0, 0), new Size((int)(image.Width * 0.9), (int)(image.Height * 0.9)))
+                    ));
+                }
+            }
+
+            Rectangle hair; Rectangle brow; Rectangle roiEyes; Rectangle nose;
+            faceDetection.faceROI(image, leftEye, rightEye, realMouth,
+                out hair, out brow, out roiEyes, out nose, out realMouth);
+
+            Image<Bgr, byte> hairImage; Image<Bgr, byte> browImage;
+            Image<Bgr, byte> eyesImage; Image<Bgr, byte> noseImage; Image<Bgr, byte> mouthImge;
+            roiToFixedImage(image, hair, brow, roiEyes, nose, realMouth,
+                out hairImage, out browImage, out eyesImage, out noseImage, out mouthImge);
+
+            face.HairHog = hogDescriptor.GetHog(hairImage);
+            face.BrowHog = hogDescriptor.GetHog(browImage);
+            face.EyesHog = hogDescriptor.GetHog(eyesImage);
+            face.NoseHog = hogDescriptor.GetHog(noseImage);
+            face.MouthHog = hogDescriptor.GetHog(mouthImge);
+
+            face.HairSift = siftDescriptor.ComputeDescriptor(hairImage);
+            face.BrowSift = siftDescriptor.ComputeDescriptor(browImage);
+            face.EyesSift = siftDescriptor.ComputeDescriptor(eyesImage);
+            face.NoseSift = siftDescriptor.ComputeDescriptor(noseImage);
+            face.MouthSift = siftDescriptor.ComputeDescriptor(mouthImge);
+
+            face.processDescriptors();
+            return face;
+        }
+
         void roiToFixedImage(Image<Bgr, Byte> face, Rectangle hairRoi, Rectangle browRoi, Rectangle eyesRoi, Rectangle noseRoi, Rectangle mouthRoi,
             out Image<Bgr, byte> hair, out Image<Bgr, byte> brow, out Image<Bgr, byte> eyes, out Image<Bgr, byte> nose, out Image<Bgr, byte> mouth)
         {
-            hair = face.GetSubRect(hairRoi).Resize(156, 52, Inter.Linear);
-            brow = face.GetSubRect(browRoi).Resize(130, 26, Inter.Linear);
-            eyes = face.GetSubRect(eyesRoi).Resize(130, 26, Inter.Linear);
-            nose = face.GetSubRect(noseRoi).Resize(52, 78, Inter.Linear);
-            mouth = face.GetSubRect(mouthRoi).Resize(52, 26, Inter.Linear);
+            hair = face.GetSubRect(hairRoi).Resize(105, 30, Inter.Linear);
+            brow = face.GetSubRect(browRoi).Resize(105, 15, Inter.Linear);
+            eyes = face.GetSubRect(eyesRoi).Resize(90, 15, Inter.Linear);
+            nose = face.GetSubRect(noseRoi).Resize(45, 60, Inter.Linear);
+            mouth = face.GetSubRect(mouthRoi).Resize(45, 30, Inter.Linear);
         }
 
 
