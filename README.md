@@ -7,7 +7,9 @@ The software retreive the photos closest to the composite sketch given in input.
 Steps:
 + Use Haar-like features to detect face and facial landmarks.
 + Compute HOG and Sift descriptors of hair, brow, eyes, nose, mouth.
++ Project descriptors to more discriminant space using LDA.
 + Use euclidean distance of descriptors to sort photos.
++ Final ranking is calculated by using Borda count
 
 # Quick start
 
@@ -30,7 +32,7 @@ Steps:
 
         Dir _Photos/Images_ contains only selected images from **FERET**.
 
-        Dir _Photos/Others_ contains selected images from **CUFS** and **PRIP-HDC**.
+        Dir _Photos/Others_ contains selected images from **FERET**, **MEDS-II**, and **FEI**.
 
         
 

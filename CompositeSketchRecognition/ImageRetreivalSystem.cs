@@ -96,7 +96,8 @@ namespace CompositeSketchRecognition
                 for (int i = 0; i < trainingSetSketchesPath.Count; i++)
                 {
                     FaceDescriptor face = processImage(trainingSetSketchesPath[i], lda.trainingSet[i], true);
-                    trainingDescriptors.Add(face);
+                    if(face != null)
+                        trainingDescriptors.Add(face);
 
                     if(progress)
                         worker.ReportProgress(i * 100 / trainingSetSketchesPath.Count);
@@ -148,10 +149,6 @@ namespace CompositeSketchRecognition
                 double[] wHOG = new double[0];
                 double[] wSIFT = new double[0];
 
-                //double[] wSIFT = new double[NVarsSIFT];
-                //for(int i = 0; i < NVarsSIFT; i++)
-                //    wSIFT[i] = 1;
-
                 alglib.lda.fisherlda(xyHOG, NPoints, NVarsHOG, NClasses, ref info, ref wHOG, null);
                 alglib.lda.fisherlda(xySIFT, NPoints, NVarsSIFT, NClasses, ref info, ref wSIFT, null);
                 lda.projectingVectorHOG = wHOG;
@@ -200,14 +197,15 @@ namespace CompositeSketchRecognition
                     List<FileInfo> files = new List<FileInfo>();
                     DirectoryInfo dinfo = new DirectoryInfo(PHOTO_PATH);
                     files.AddRange(dinfo.GetFiles(PHOTO_EXTENSION));
-                    //dinfo = new DirectoryInfo(OTHER_PHOTO_PATH);
-                    //files.AddRange(dinfo.GetFiles(PHOTO_EXTENSION));
-                    //files.AddRange(dinfo.GetFiles(OTHER_PHOTO_EXTENSION));
+                    dinfo = new DirectoryInfo(OTHER_PHOTO_PATH);
+                    files.AddRange(dinfo.GetFiles(PHOTO_EXTENSION));
+                    files.AddRange(dinfo.GetFiles(OTHER_PHOTO_EXTENSION));
 
                     for (int i = 0; i < files.Count; i++)
                     {
                         FaceDescriptor face = processImage(files[i].FullName, files[i].Name, true);
-                        descriptors.Add(face);
+                        if(face != null)
+                            descriptors.Add(face);
 
                         if(progress)
                             worker.ReportProgress(i * 100 / files.Count);
@@ -313,6 +311,7 @@ namespace CompositeSketchRecognition
             Rectangle realFace; Rectangle[] realEyes; Rectangle realMouth;
             Rectangle[] faces; Rectangle[] eyes; Rectangle[] mouths;//placeholder for out, not important for query
             faceDetection.faceAndLandmarks(image, out realFace, out realEyes, out realMouth, out faces, out eyes, out mouths);
+            if (realFace.Width == 0) { return null; }
             var extendedFace = faceDetection.extendFace(image, realFace, faceDetection.faceOutline(image));
             image = image.GetSubRect(extendedFace);
 
