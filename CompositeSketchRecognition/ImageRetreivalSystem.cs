@@ -371,11 +371,11 @@ namespace CompositeSketchRecognition
         void roiToFixedImage(Image<Bgr, Byte> face, Rectangle hairRoi, Rectangle browRoi, Rectangle eyesRoi, Rectangle noseRoi, Rectangle mouthRoi,
             out Image<Bgr, byte> hair, out Image<Bgr, byte> brow, out Image<Bgr, byte> eyes, out Image<Bgr, byte> nose, out Image<Bgr, byte> mouth)
         {
-            hair = face.GetSubRect(hairRoi).Resize(105, 30, Inter.Linear);
-            brow = face.GetSubRect(browRoi).Resize(105, 15, Inter.Linear);
-            eyes = face.GetSubRect(eyesRoi).Resize(90, 15, Inter.Linear);
-            nose = face.GetSubRect(noseRoi).Resize(45, 60, Inter.Linear);
-            mouth = face.GetSubRect(mouthRoi).Resize(45, 30, Inter.Linear);
+            hair = face.GetSubRect(hairRoi).Resize(96, 32, Inter.Linear);
+            brow = face.GetSubRect(browRoi).Resize(80, 16, Inter.Linear);
+            eyes = face.GetSubRect(eyesRoi).Resize(80, 16, Inter.Linear);
+            nose = face.GetSubRect(noseRoi).Resize(32, 48, Inter.Linear);
+            mouth = face.GetSubRect(mouthRoi).Resize(48, 32, Inter.Linear);
         }
 
 

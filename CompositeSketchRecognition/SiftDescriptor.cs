@@ -17,7 +17,7 @@ namespace CompositeSketchRecognition
             VectorOfKeyPoint keypoints = new VectorOfKeyPoint();
             Mat descriptors = new Mat();
 
-            int step = 5;
+            int step = 9;
 
             for (int y = step; y < image.Rows - step; y += step)
             {
