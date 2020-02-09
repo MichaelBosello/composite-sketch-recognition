@@ -10,21 +10,19 @@ namespace CompositeSketchRecognition
     {
         public SiftDescriptor(){}
 
-        public float[] ComputeDescriptor(Image<Bgr, byte> image)
+        public float[] ComputeDescriptor(Image<Bgr, byte> image, int stepX = 9, int stepY = 9)
         {
             SIFT sift = new SIFT();
 
             VectorOfKeyPoint keypoints = new VectorOfKeyPoint();
             Mat descriptors = new Mat();
 
-            int step = 9;
-
-            for (int y = step; y < image.Rows - step; y += step)
+            for (int y = stepY; y < image.Rows - stepY; y += stepY)
             {
-                for (int x = step; x < image.Cols - step; x += step)
+                for (int x = stepX; x < image.Cols - stepX; x += stepX)
                 {
                     MKeyPoint[] point = { new MKeyPoint() };
-                    point[0].Size = step;
+                    point[0].Size = stepX;
                     point[0].Point = new Point(x, y);
                     keypoints.Push(point);
                 }

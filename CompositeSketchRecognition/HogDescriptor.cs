@@ -8,18 +8,16 @@ namespace CompositeSketchRecognition
 {
     class HogDescriptor
     {
-        public const int BLOCK_SIZE = 16;
-        public const int CELL_SIZE = 8;
-        public float[] GetHog(Image<Gray, Byte> image)
+        public float[] GetHog(Image<Gray, Byte> image, int block_size = 16, int cell_size = 8)
         {
-            HOGDescriptor hog = new HOGDescriptor(image.Size, new Size(BLOCK_SIZE, BLOCK_SIZE), new Size(CELL_SIZE, CELL_SIZE), new Size(CELL_SIZE, CELL_SIZE));
+            HOGDescriptor hog = new HOGDescriptor(image.Size, new Size(block_size, block_size), new Size(cell_size, cell_size), new Size(cell_size, cell_size));
             float[] result = hog.Compute(image);
             return result;
         }
 
-        public float[] GetHog(Image<Bgr, Byte> image)
+        public float[] GetHog(Image<Bgr, Byte> image, int block_size = 16, int cell_size = 8)
         {
-            HOGDescriptor hog = new HOGDescriptor(image.Size, new Size(BLOCK_SIZE, BLOCK_SIZE), new Size(CELL_SIZE, CELL_SIZE), new Size(CELL_SIZE, CELL_SIZE));
+            HOGDescriptor hog = new HOGDescriptor(image.Size, new Size(block_size, block_size), new Size(cell_size, cell_size), new Size(cell_size, cell_size));
             float[] result = hog.Compute(image);
             return result;
         }

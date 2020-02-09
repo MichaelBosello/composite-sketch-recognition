@@ -153,6 +153,11 @@ namespace CompositeSketchRecognition
                 alglib.lda.fisherlda(xySIFT, NPoints, NVarsSIFT, NClasses, ref info, ref wSIFT, null);
                 lda.projectingVectorHOG = wHOG;
                 lda.projectingVectorSIFT = wSIFT;
+
+                Stream SaveFileStream = File.Create(LDA_FILE_NAME);
+                BinaryFormatter serializer = new BinaryFormatter();
+                serializer.Serialize(SaveFileStream, lda);
+                SaveFileStream.Close();
             }
         }
         public void loadTraining()
@@ -160,19 +165,47 @@ namespace CompositeSketchRecognition
             
             if (lda == null)
             {
-                lda = new LDA();
+
                 List<FileInfo> files = new List<FileInfo>();
                 DirectoryInfo dinfo = new DirectoryInfo(SKETCH_PATH);
                 files.AddRange(dinfo.GetFiles(SKETCH_EXTENSION));
-
                 Random rnd = new Random();
-                files.OrderBy(x => rnd.Next());
-                List<FileInfo> trainingSet = files.Take(TRAINING_SIZE).ToList();
-                List<FileInfo> testSet = files.Skip(TRAINING_SIZE).Take(TEST_SIZE).ToList();
 
-                trainingSetSketchesPath = trainingSet.Select(file => file.FullName).ToList();
-                testSetSketchesPath = testSet.Select(file => file.FullName).ToList();
-                lda.trainingSet = trainingSetSketchesPath.Select(file => file.Substring(file.LastIndexOf('\\') + 1, 5)).ToList();
+                if (File.Exists(LDA_FILE_NAME))
+                {
+                    Stream openFileStream = File.OpenRead(LDA_FILE_NAME);
+                    BinaryFormatter deserializer = new BinaryFormatter();
+                    lda = (LDA) deserializer.Deserialize(openFileStream);
+                    openFileStream.Close();
+
+                    testSetSketchesPath = new List<string>();
+
+                    foreach(FileInfo file in files){
+                        foreach(string train in lda.trainingSet)
+                        {
+                            if(!file.Name.StartsWith(train))
+                            {
+                                testSetSketchesPath.Add(file.FullName);
+                                break;
+                            }
+                        }
+                        
+                    }
+                    testSetSketchesPath = testSetSketchesPath.OrderBy(x => rnd.Next()).ToList();
+                    testSetSketchesPath = testSetSketchesPath.Take(TEST_SIZE).ToList();
+                }
+                else
+                {
+                    lda = new LDA();
+                    
+                    files = files.OrderBy(x => rnd.Next()).ToList();
+                    List<FileInfo> trainingSet = files.Take(TRAINING_SIZE).ToList();
+                    List<FileInfo> testSet = files.Skip(TRAINING_SIZE).Take(TEST_SIZE).ToList();
+
+                    trainingSetSketchesPath = trainingSet.Select(file => file.FullName).ToList();
+                    testSetSketchesPath = testSet.Select(file => file.FullName).ToList();
+                    lda.trainingSet = trainingSetSketchesPath.Select(file => file.Substring(file.LastIndexOf('\\') + 1, 5)).ToList();
+                }
             }
         }
 
@@ -181,6 +214,11 @@ namespace CompositeSketchRecognition
         {
             bool progress = (worker != null);
             if (sketchPath.Equals("")) { return; }
+
+            if(lda == null)
+            {
+                loadTraining();
+            }
 
             if (descriptors == null)
             {
@@ -197,9 +235,9 @@ namespace CompositeSketchRecognition
                     List<FileInfo> files = new List<FileInfo>();
                     DirectoryInfo dinfo = new DirectoryInfo(PHOTO_PATH);
                     files.AddRange(dinfo.GetFiles(PHOTO_EXTENSION));
-                    dinfo = new DirectoryInfo(OTHER_PHOTO_PATH);
-                    files.AddRange(dinfo.GetFiles(PHOTO_EXTENSION));
-                    files.AddRange(dinfo.GetFiles(OTHER_PHOTO_EXTENSION));
+                    //dinfo = new DirectoryInfo(OTHER_PHOTO_PATH);
+                    //files.AddRange(dinfo.GetFiles(PHOTO_EXTENSION));
+                    //files.AddRange(dinfo.GetFiles(OTHER_PHOTO_EXTENSION));
 
                     for (int i = 0; i < files.Count; i++)
                     {
@@ -248,15 +286,18 @@ namespace CompositeSketchRecognition
                 sketchFace.DescriptorSift[i] *= (float)lda.projectingVectorSIFT[i];
             }
 
+            int hogSize = 540;
+            int siftSize = 512;
+
             for (int i = 0; i < descriptors.Count; i++)
             {
                 addDictionaryUnique(
                     euclideanDistance(
-                        sketchFace.DescriptorHog, descriptors[i].DescriptorHog
+                        sketchFace.DescriptorHog, descriptors[i].DescriptorHog, hogSize
                     ), descriptors[i].Name, resultHog);
                 addDictionaryUnique(
                     euclideanDistance(
-                        sketchFace.DescriptorSift, descriptors[i].DescriptorSift
+                        sketchFace.DescriptorSift, descriptors[i].DescriptorSift, siftSize
                     ), descriptors[i].Name, resultSift);
                 if (progress && !progressOnlyDescriptor)
                     worker.ReportProgress(i * 100 / descriptors.Count);
@@ -295,12 +336,33 @@ namespace CompositeSketchRecognition
             dictionary.Add(key, value);
         }
 
-        double euclideanDistance(float[] q, float[] p)
+        double euclideanDistance(float[] q, float[] p, int size)
         {
             double distance = 0;
             for (int i = 0; i < q.Length; i++)
             {
-                distance += Math.Pow(q[i] - p[i], 2);
+                int weight = 1;
+                if (i < size * 5)//mouth
+                {
+                    weight = 4;
+                }
+                if (i < size * 4)//nose
+                {
+                    weight = 1;
+                }
+                if (i < size * 3)//eyes
+                {
+                    weight = 2;
+                }
+                if (i < size * 2)//brow
+                {
+                    weight = 4;
+                }
+                if (i < size)//hair
+                {
+                    weight = 8;
+                }
+                distance += Math.Pow(q[i] - p[i], 2) * weight;
             }
             return Math.Sqrt(distance);
         }
@@ -351,17 +413,17 @@ namespace CompositeSketchRecognition
             roiToFixedImage(image, hair, brow, roiEyes, nose, realMouth,
                 out hairImage, out browImage, out eyesImage, out noseImage, out mouthImge);
 
-            face.HairHog = hogDescriptor.GetHog(hairImage);
-            face.BrowHog = hogDescriptor.GetHog(browImage);
-            face.EyesHog = hogDescriptor.GetHog(eyesImage);
-            face.NoseHog = hogDescriptor.GetHog(noseImage);
-            face.MouthHog = hogDescriptor.GetHog(mouthImge);
+            face.HairHog = hogDescriptor.GetHog(hairImage, 32, 16);
+            face.BrowHog = hogDescriptor.GetHog(browImage, 32, 16);
+            face.EyesHog = hogDescriptor.GetHog(eyesImage, 32, 16);
+            face.NoseHog = hogDescriptor.GetHog(noseImage, 16, 8);
+            face.MouthHog = hogDescriptor.GetHog(mouthImge, 16, 8);
 
-            face.HairSift = siftDescriptor.ComputeDescriptor(hairImage);
-            face.BrowSift = siftDescriptor.ComputeDescriptor(browImage);
-            face.EyesSift = siftDescriptor.ComputeDescriptor(eyesImage);
-            face.NoseSift = siftDescriptor.ComputeDescriptor(noseImage);
-            face.MouthSift = siftDescriptor.ComputeDescriptor(mouthImge);
+            face.HairSift = siftDescriptor.ComputeDescriptor(hairImage, 24, 16);
+            face.BrowSift = siftDescriptor.ComputeDescriptor(browImage, 24, 16);
+            face.EyesSift = siftDescriptor.ComputeDescriptor(eyesImage, 24, 16);
+            face.NoseSift = siftDescriptor.ComputeDescriptor(noseImage, 8, 12);
+            face.MouthSift = siftDescriptor.ComputeDescriptor(mouthImge, 12, 8);
 
             face.processDescriptors();
             return face;
@@ -370,9 +432,9 @@ namespace CompositeSketchRecognition
         void roiToFixedImage(Image<Bgr, Byte> face, Rectangle hairRoi, Rectangle browRoi, Rectangle eyesRoi, Rectangle noseRoi, Rectangle mouthRoi,
             out Image<Bgr, byte> hair, out Image<Bgr, byte> brow, out Image<Bgr, byte> eyes, out Image<Bgr, byte> nose, out Image<Bgr, byte> mouth)
         {
-            hair = face.GetSubRect(hairRoi).Resize(96, 32, Inter.Linear);
-            brow = face.GetSubRect(browRoi).Resize(80, 16, Inter.Linear);
-            eyes = face.GetSubRect(eyesRoi).Resize(80, 16, Inter.Linear);
+            hair = face.GetSubRect(hairRoi).Resize(96, 64, Inter.Linear);
+            brow = face.GetSubRect(browRoi).Resize(96, 64, Inter.Linear);
+            eyes = face.GetSubRect(eyesRoi).Resize(96, 64, Inter.Linear);
             nose = face.GetSubRect(noseRoi).Resize(32, 48, Inter.Linear);
             mouth = face.GetSubRect(mouthRoi).Resize(48, 32, Inter.Linear);
         }
