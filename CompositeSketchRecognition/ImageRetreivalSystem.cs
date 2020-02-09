@@ -344,7 +344,7 @@ namespace CompositeSketchRecognition
                 int weight = 1;
                 if (i < size * 5)//mouth
                 {
-                    weight = 4;
+                    weight = 2;
                 }
                 if (i < size * 4)//nose
                 {
@@ -352,15 +352,15 @@ namespace CompositeSketchRecognition
                 }
                 if (i < size * 3)//eyes
                 {
-                    weight = 2;
+                    weight = 1;
                 }
                 if (i < size * 2)//brow
                 {
-                    weight = 4;
+                    weight = 1;
                 }
                 if (i < size)//hair
                 {
-                    weight = 8;
+                    weight = 6;
                 }
                 distance += Math.Pow(q[i] - p[i], 2) * weight;
             }
