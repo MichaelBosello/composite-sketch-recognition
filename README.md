@@ -13,8 +13,10 @@ Steps:
 
 # Quick start
 
-> The first time you run a search it would take much time because the program has to build descriptors.
-> Descriptors will be saved as _descriptors.bin_, in the _bin_ directory.
+> The first time you run a search it would take much time because the program has to build descriptors and projecting vectors.
+> Descriptors and vectors will be saved respectively as _descriptors.bin_ and _lda.bin_, both are saved in the _bin_ directory.
+
+> If you want to save computational time, you can download pre-build descriptors and vectors from the release section of GitHub. Follow the instruction in the release.
 
 1) Populate the _database_ directory.
 
