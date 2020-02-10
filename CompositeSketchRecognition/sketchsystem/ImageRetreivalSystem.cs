@@ -124,9 +124,9 @@ namespace CompositeSketchRecognition
                     List<FileInfo> files = new List<FileInfo>();
                     DirectoryInfo dinfo = new DirectoryInfo(PHOTO_PATH);
                     files.AddRange(dinfo.GetFiles(PHOTO_EXTENSION));
-                    //dinfo = new DirectoryInfo(OTHER_PHOTO_PATH);
-                    //files.AddRange(dinfo.GetFiles(PHOTO_EXTENSION));
-                    //files.AddRange(dinfo.GetFiles(OTHER_PHOTO_EXTENSION));
+                    dinfo = new DirectoryInfo(OTHER_PHOTO_PATH);
+                    files.AddRange(dinfo.GetFiles(PHOTO_EXTENSION));
+                    files.AddRange(dinfo.GetFiles(OTHER_PHOTO_EXTENSION));
 
                     for (int i = 0; i < files.Count; i++)
                     {
@@ -507,23 +507,23 @@ namespace CompositeSketchRecognition
 
             if (index == 7)
             {
-                return hogDescriptor.hogVisualization(hairImage, hogDescriptor.GetHog(hairImage));
+                return hogDescriptor.hogVisualization(hairImage, hogDescriptor.GetHog(hairImage, 32, 16), 16);
             }
             if (index == 8)
             {
-                return hogDescriptor.hogVisualization(browImage, hogDescriptor.GetHog(browImage));
+                return hogDescriptor.hogVisualization(browImage, hogDescriptor.GetHog(browImage, 32, 16), 16);
             }
             if (index == 9)
             {
-                return hogDescriptor.hogVisualization(eyesImage, hogDescriptor.GetHog(eyesImage));
+                return hogDescriptor.hogVisualization(eyesImage, hogDescriptor.GetHog(eyesImage, 32, 16), 16);
             }
             if (index == 10)
             {
-                return hogDescriptor.hogVisualization(noseImage, hogDescriptor.GetHog(noseImage));
+                return hogDescriptor.hogVisualization(noseImage, hogDescriptor.GetHog(noseImage, 16, 8), 8);
             }
             if (index == 11)
             {
-                return hogDescriptor.hogVisualization(mouthImge, hogDescriptor.GetHog(mouthImge));
+                return hogDescriptor.hogVisualization(mouthImge, hogDescriptor.GetHog(mouthImge, 16, 8), 8);
             }
 
             return null;

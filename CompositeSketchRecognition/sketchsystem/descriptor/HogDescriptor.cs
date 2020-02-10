@@ -22,14 +22,14 @@ namespace CompositeSketchRecognition
             return result;
         }
 
-        public Image<Bgr, Byte> hogVisualization(Image<Gray, Byte> image, float[] descriptorValues)
+        public Image<Bgr, Byte> hogVisualization(Image<Gray, Byte> image, float[] descriptorValues, int cellSize)
         {
-            return hogVisualization(image.Convert<Bgr, byte>(), descriptorValues);
+            return hogVisualization(image.Convert<Bgr, byte>(), descriptorValues, cellSize);
         }
 
         //Thanks to Carl Vondrick
         //http://www.juergenbrauer.org/old_wiki/doku.php?id=public:hog_descriptor_computation_and_visualization
-        public Image<Bgr, Byte> hogVisualization(Image<Bgr, Byte> image, float[] descriptorValues)
+        public Image<Bgr, Byte> hogVisualization(Image<Bgr, Byte> image, float[] descriptorValues, int cellSize)
         {
             int DIMX = image.Width;
             int DIMY = image.Height;
@@ -37,8 +37,7 @@ namespace CompositeSketchRecognition
 
             Image<Bgr, Byte> result = image.Copy();
             result = result.Resize((int)(result.Cols * zoomFac), (int)(result.Rows * zoomFac), Inter.Linear);
-
-            int cellSize = 8;
+            
             int gradientBinSize = 9;
             float radRangeForOneBin = (float)(Math.PI / (float)gradientBinSize); // dividing 180 into 9 bins, how large (in rad) is one bin?
 
