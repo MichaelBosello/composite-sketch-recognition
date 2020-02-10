@@ -52,7 +52,12 @@ namespace CompositeSketchRecognition
             rank50 = 0;
             rank100 = 0;
             rank200 = 0;
-            loadTraining();
+            if (lda == null)
+                lda = LDA.loadTraining(
+                    TRAINING_SIZE, TEST_SIZE,
+                    SKETCH_PATH, SKETCH_EXTENSION, LDA_FILE_NAME,
+                    out trainingSetSketchesPath, out testSetSketchesPath
+                );
             for (int i = 0; i < testSetSketchesPath.Count; i++)
             {
                 search(testSetSketchesPath[i], worker, true);
@@ -88,126 +93,8 @@ namespace CompositeSketchRecognition
             worker.ReportProgress(100);
         }
 
-        public void training(BackgroundWorker worker = null){
-            bool progress = (worker != null);
-            if (lda.projectingVectorHOG == null)
-            {
-                List<FaceDescriptor> trainingDescriptors = new List<FaceDescriptor>();
-                for (int i = 0; i < trainingSetSketchesPath.Count; i++)
-                {
-                    FaceDescriptor face = processImage(trainingSetSketchesPath[i], lda.trainingSet[i], true);
-                    if(face != null)
-                        trainingDescriptors.Add(face);
-
-                    if(progress)
-                        worker.ReportProgress(i * 100 / trainingSetSketchesPath.Count);
-                }
-
-                if(progress)
-                    worker.ReportProgress(0);
-
-                Dictionary<string, FaceDescriptor> descriptorsWithName = new Dictionary<string, FaceDescriptor>();
-
-                foreach(var descriptor in descriptors){
-                    string name = descriptor.Name.Substring(0, 5);
-                    if (!descriptorsWithName.ContainsKey(name))
-                    {
-                        descriptorsWithName.Add(name, descriptor);
-                    }
-                }
-
-                int NPoints = TRAINING_SIZE * 2;
-                int NClasses = TRAINING_SIZE;
-                int NVarsHOG = trainingDescriptors[0].DescriptorHog.Count();
-                int NVarsSIFT = trainingDescriptors[0].DescriptorSift.Count();
-
-                double[,] xyHOG = new double[NPoints, NVarsHOG + 1];
-                double[,] xySIFT = new double[NPoints, NVarsSIFT + 1];
-                for (int i = 0; i < TRAINING_SIZE; i++)
-                {
-                    FaceDescriptor photoDescriptor = descriptorsWithName[trainingDescriptors[i].Name];
-
-                    for(int k = 0; k < NVarsHOG; k++){
-                        xyHOG[i, k] = trainingDescriptors[i].DescriptorHog[k];
-                        xyHOG[i + TRAINING_SIZE, k] = photoDescriptor.DescriptorHog[k];
-                    }
-                    xyHOG[i, NVarsHOG] = i;
-                    xyHOG[i + TRAINING_SIZE, NVarsHOG] = i;
-
-                    for(int k = 0; k < NVarsSIFT; k++){
-                        xySIFT[i, k] = trainingDescriptors[i].DescriptorSift[k];
-                        xySIFT[i + TRAINING_SIZE, k] = photoDescriptor.DescriptorSift[k];
-                    }
-                    xySIFT[i, NVarsSIFT] = i;
-                    xySIFT[i + TRAINING_SIZE, NVarsSIFT] = i;
-
-                    if(progress)
-                        worker.ReportProgress(i * 100 / TRAINING_SIZE);
-                }
-
-                int info = 0;
-                double[] wHOG = new double[0];
-                double[] wSIFT = new double[0];
-
-                alglib.lda.fisherlda(xyHOG, NPoints, NVarsHOG, NClasses, ref info, ref wHOG, null);
-                alglib.lda.fisherlda(xySIFT, NPoints, NVarsSIFT, NClasses, ref info, ref wSIFT, null);
-                lda.projectingVectorHOG = wHOG;
-                lda.projectingVectorSIFT = wSIFT;
-
-                Stream SaveFileStream = File.Create(LDA_FILE_NAME);
-                BinaryFormatter serializer = new BinaryFormatter();
-                serializer.Serialize(SaveFileStream, lda);
-                SaveFileStream.Close();
-            }
-        }
-        public void loadTraining()
-        {
-            
-            if (lda == null)
-            {
-
-                List<FileInfo> files = new List<FileInfo>();
-                DirectoryInfo dinfo = new DirectoryInfo(SKETCH_PATH);
-                files.AddRange(dinfo.GetFiles(SKETCH_EXTENSION));
-                Random rnd = new Random();
-
-                if (File.Exists(LDA_FILE_NAME))
-                {
-                    Stream openFileStream = File.OpenRead(LDA_FILE_NAME);
-                    BinaryFormatter deserializer = new BinaryFormatter();
-                    lda = (LDA) deserializer.Deserialize(openFileStream);
-                    openFileStream.Close();
-
-                    testSetSketchesPath = new List<string>();
-
-                    foreach(FileInfo file in files){
-                        foreach(string train in lda.trainingSet)
-                        {
-                            if(!file.Name.StartsWith(train))
-                            {
-                                testSetSketchesPath.Add(file.FullName);
-                                break;
-                            }
-                        }
-                        
-                    }
-                    testSetSketchesPath = testSetSketchesPath.OrderBy(x => rnd.Next()).ToList();
-                    testSetSketchesPath = testSetSketchesPath.Take(TEST_SIZE).ToList();
-                }
-                else
-                {
-                    lda = new LDA();
-                    
-                    files = files.OrderBy(x => rnd.Next()).ToList();
-                    List<FileInfo> trainingSet = files.Take(TRAINING_SIZE).ToList();
-                    List<FileInfo> testSet = files.Skip(TRAINING_SIZE).Take(TEST_SIZE).ToList();
-
-                    trainingSetSketchesPath = trainingSet.Select(file => file.FullName).ToList();
-                    testSetSketchesPath = testSet.Select(file => file.FullName).ToList();
-                    lda.trainingSet = trainingSetSketchesPath.Select(file => file.Substring(file.LastIndexOf('\\') + 1, 5)).ToList();
-                }
-            }
-        }
+        
+        
 
         // main query method
         public void search(String sketchPath, BackgroundWorker worker = null, bool progressOnlyDescriptor = false)
@@ -216,9 +103,11 @@ namespace CompositeSketchRecognition
             if (sketchPath.Equals("")) { return; }
 
             if(lda == null)
-            {
-                loadTraining();
-            }
+                lda = LDA.loadTraining(
+                    TRAINING_SIZE, TEST_SIZE,
+                    SKETCH_PATH, SKETCH_EXTENSION, LDA_FILE_NAME,
+                    out trainingSetSketchesPath, out testSetSketchesPath
+                );
 
             if (descriptors == null)
             {
@@ -255,7 +144,8 @@ namespace CompositeSketchRecognition
                     SaveFileStream.Close();
                 }
 
-                training(worker);
+                LDA.training(lda, descriptors, trainingSetSketchesPath,
+                    processImage, TRAINING_SIZE, LDA_FILE_NAME, worker);
 
                 for (int i = 0; i < descriptors.Count; i++)
                 {

@@ -8,7 +8,7 @@ using System.Windows.Forms;
 
 namespace CompositeSketchRecognition
 {
-    public partial class Form1 : Form
+    public partial class SketchForm : Form
     {
         public const string PHOTO_PATH = @"..\..\..\database\UoM-SGFS-v2\Photos\Images\";
         public const string SKETCH_PATH = @"..\..\..\database\UoM-SGFS-v2\Sketches\Set A\Images\";
@@ -25,7 +25,7 @@ namespace CompositeSketchRecognition
         String otherImage = "";
         bool inverted = false;
 
-        public Form1()
+        public SketchForm()
         {
             InitializeComponent();
             PopulateListBox(listBox1, PHOTO_PATH, PHOTO_EXTENSION);

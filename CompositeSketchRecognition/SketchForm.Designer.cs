@@ -1,6 +1,6 @@
 ﻿namespace CompositeSketchRecognition
 {
-    partial class Form1
+    partial class SketchForm
     {
         /// <summary>
         /// Required designer variable.

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace CompositeSketchRecognition
 {
     [Serializable]
-    class FaceDescriptor
+    public class FaceDescriptor
     {
         public String Name { get; set; }
         public float[] HairHog { get; set; }
